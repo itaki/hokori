@@ -1,0 +1,230 @@
+[
+  {
+    "id_num": 367357352,
+    "name": "MiterSaw",
+    "gate_prefs": ["MS"],
+    "button": {
+      },
+    "led": {
+    },
+    "volt": {
+      "type": "ADS1115",
+      "voltage_address": {
+        "board_address": 72,
+        "pin": 0
+      },
+      "sensitivity": 4
+    },
+    
+    "keyboard_key": 50,
+    "last_used": 0,
+    "spin_down_time": 24
+  },
+  {
+    "id_num": 347345734573788,
+    "name": "MiterSawLeft",
+    "gate_prefs": ["MS", "MSL"],
+    "button": {
+      "address": "pi",
+      "pin": 22,
+      "button_type": "momentary"
+    },
+    "led": {
+      "type": "PWMLED",
+      "address": "pi",
+      "pin": 23
+    },
+    "volt": {
+
+    },
+    "keyboard_key": 51,
+    "spin_down_time": 0
+  },
+  {
+    "id_num": 90896867068,
+    "name": "MiterSawRight",
+    "gate_prefs": ["MS", "MSR"],
+    "button": {
+      "address": "pi",
+      "pin": 18,
+      "button_type": "momentary"
+    },
+    "led": {
+      "type": "PWMLED",
+      "address": "pi",
+      "pin": 27
+    },
+    "volt": {
+
+    },
+    "keyboard_key": 52,
+    "spin_down_time": 0
+  },
+  {
+    "id_num": 12334764987,
+    "name": "BandSaw",
+    "gate_prefs": ["BS", "CB"],
+    "button": {
+    },
+    "led": {
+    },
+    "volt": {
+      "type": "ADS1115",
+      "voltage_address": {
+        "board_address": 72,
+        "pin": 1
+      },
+      "sensitivity": 4
+    },
+    "keyboard_key": 49,
+    "spin_down_time": 15
+  }, 
+  {
+    "id_num": 803428459878,
+    "name": "Hose",
+    "gate_prefs": ["HOSE", "CB"],
+    "button": {
+      "address": "pi",
+      "pin": 5,
+      "button_type": "momentary"
+    },
+    "led": {
+      "type": "RGB",
+      "address": "pi",
+      "pins": [19,20,21]
+    },
+    "volt": {
+
+    },
+    "keyboard_key": 52,
+    "spin_down_time": 0
+  },
+  {
+    "id_num": 23452378,
+    "name": "FloorSweep",
+    "gate_prefs": ["FS"],
+    "button": {
+
+    },
+    "led": {
+
+    },
+    "volt": {
+
+    },
+    "keyboard_key": 52,
+    "spin_down_time": 0
+  },
+  {
+    "id_num": 43575835686,
+    "name": "Lathe",
+    "gate_prefs": ["L", "CB"],
+    "button": {
+
+    },
+    "led": {
+    },
+    "volt": {
+
+    },
+    "keyboard_key": 52,
+    "spin_down_time": 15
+  },
+  {
+    "id_num": 23452546378,
+    "name": "OverHead Hose",
+    "gate_prefs": ["VT", "OH"],
+    "button": {
+
+    },
+    "led": {
+
+    },
+    "volt": {
+
+    },
+    "keyboard_key": 52,
+    "spin_down_time": 20
+  },
+  {
+    "id_num": 123764987,
+    "name": "TableSaw",
+    "gate_prefs": ["TS", "VT", "IB", "TSH"],
+    "button": {
+    },
+    "led": {
+      "type": "RELAY",
+      "address": 67,
+      "pin": 3
+    },
+    "volt": {
+      "type": "ADS1115",
+      "voltage_address": {
+        "board_address": 74,
+        "pin": 0
+      },
+      "sensitivity": 4
+    },
+    "keyboard_key": 49,
+    "spin_down_time": 10
+  },
+  {
+    "id_num": 123764987,
+    "name": "Router",
+    "gate_prefs": ["VT", "IB", "R"],
+    "button": {
+    },
+    "led": {
+
+    },
+    "volt": {
+      "type": "ADS1115",
+      "voltage_address": {
+        "board_address": 74,
+        "pin": 1
+      },
+      "sensitivity": 4
+    },
+    "keyboard_key": 49,
+    "spin_down_time": 1
+  },
+  {
+    "id_num": 123764987,
+    "name": "Sanding Table",
+    "gate_prefs": ["VT", "IB", "ST"],
+    "button": {
+    },
+    "led": {
+
+    },
+    "volt": {
+      "type": "ADS1115",
+      "voltage_address": {
+        "board_address": 74,
+        "pin": 3
+      },
+      "sensitivity": 4
+    },
+    "keyboard_key": 49,
+    "spin_down_time": 0
+  },
+  {
+    "id_num": 12373897464987,
+    "name": "Planer",
+    "gate_prefs": ["P", "VT", "IB"],
+    "button": {
+    },
+    "led": {
+    },
+    "volt": {
+      "type": "ADS1115",
+      "voltage_address": {
+        "board_address": 74,
+        "pin": 2
+      },
+      "sensitivity": 4
+    },
+    "keyboard_key": 49,
+    "spin_down_time": 10
+  }
+]
