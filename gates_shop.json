@@ -1,0 +1,154 @@
+{
+    "gates": {
+        "HOSE": {
+            "physical_location": "Below the hose",
+            "status": 1,
+            "io_location": {
+                "address": "0x40",
+                "pin": 0
+            },
+            "min": 60,
+            "max": 120
+        },
+        "MS": {
+            "physical_location": "Mitersaw center",
+            "status": 1,
+            "io_location": {
+                "address": "0x40",
+                "pin": 1
+            },
+            "min": 60,
+            "max": 120
+        },
+        "MSR": {
+            "physical_location": "Miter right side",
+            "status": 1,
+            "io_location": {
+                "address": "0x40",
+                "pin": 2
+            },
+            "min": 60,
+            "max": 120
+        },
+        "MSL": {
+            "physical_location": "Miter Saw Left",
+            "status": 1,
+            "io_location": {
+                "address": "0x40",
+                "pin": 3
+            },
+            "min": 130,
+            "max": 50
+        },
+        "BS": {
+            "physical_location": "BandSaw",
+            "status": 1,
+            "io_location": {
+                "address": "0x40",
+                "pin": 15
+            },
+            "min": 60,
+            "max": 120
+        },
+        "FS": {
+            "physical_location": "FloorSweep",
+            "status": 1,
+            "io_location": {
+                "address": "0x40",
+                "pin": 7
+            },
+            "min": 60,
+            "max": 120
+        },
+        "CB": {
+            "physical_location": "Corner Branch",
+            "status": 1,
+            "io_location": {
+                "address": "0x40",
+                "pin": 13
+            },
+            "min": 60,
+            "max": 120
+        },
+        "VT": {
+            "physical_location": "Vertical Tube",
+            "status": 1,
+            "io_location": {
+                "address": "0x40",
+                "pin": 12
+            },
+            "min": 60,
+            "max": 120
+        },
+        "IB": {
+            "physical_location": "Island Branch",
+            "status": 1,
+            "io_location": {
+                "address": "0x43",
+                "pin": 15
+            },
+            "min": 60,
+            "max": 120
+        },
+        "OH": {
+            "physical_location": "Island Branch Overhead Arm",
+            "status": 1,
+            "io_location": {
+                "address": "0x43",
+                "pin": 12
+            },
+            "min": 60,
+            "max": 120
+        },
+        "TSH": {
+            "physical_location": "Table Saw Hood",
+            "status": 1,
+            "io_location": {
+                "address": "0x43",
+                "pin": 8
+            },
+            "min": 80,
+            "max": 140
+        },
+        "TS": {
+            "physical_location": "Table Saw Main",
+            "status": 1,
+            "io_location": {
+                "address": "0x50",
+                "pin": 13
+            },
+            "min": 60,
+            "max": 120
+        },
+        "R": {
+            "physical_location": "Router Table",
+            "status": 1,
+            "io_location": {
+                "address": "0x50",
+                "pin": 15
+            },
+            "min": 60,
+            "max": 120
+        },
+        "ST": {
+            "physical_location": "Sanding Table",
+            "status": 1,
+            "io_location": {
+                "address": "0x50",
+                "pin": 12
+            },
+            "min": 60,
+            "max": 120
+        },
+        "P": {
+            "physical_location": "Planer",
+            "status": 1,
+            "io_location": {
+                "address": "0x50",
+                "pin": 14
+            },
+            "min": 60,
+            "max": 150
+        }
+    }
+}
