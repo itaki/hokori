@@ -2,23 +2,23 @@
     "gates": {
         "HOSE": {
             "physical_location": "first",
-            "status": "closed",
+            "status": 1,
             "io_location": {
                 "address": "0x42",
                 "pin": 0
             },
-            "min": 40,
-            "max": 130
+            "min": 60,
+            "max": 120
         },
         "MS": {
             "physical_location": "second",
-            "status": "closed",
+            "status": 1,
             "io_location": {
                 "address": "0x42",
                 "pin": 1
             },
-            "min": 30,
-            "max": 150
+            "min": 60,
+            "max": 120
         }
     }
 }

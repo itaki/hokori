@@ -8,17 +8,7 @@ import board
 import busio
 import adafruit_pca9685
 import get_full_path
-
-i2c = busio.I2C(board.SCL, board.SDA)
-
-TOOLS_FILE = 'tools.json'
-BACKUP_DIR = '_BU'
-on_led_color = 0xffff
-spindown_led_color = 0x8888
-off_led_color = 0x1111
-on_rgb_color = {'bright': (.51, .9, 0), 'dark': (.6, 1, .1)}
-spindown_rgb_color = {'bright': (1, .59, 0), 'dark': (0, 0, 0)}
-off_rgb_color = {'bright': (.1, .82, .90), 'dark': (.1, .82, .90)}
+from main import TOOLS_FILE, BACKUP_DIR
 
 class Tool:
     def __init__(self, tool):
@@ -121,8 +111,8 @@ class Tool:
                 self.led.off()
         print(f'----------->{self.name} turned OFF')
 
-class Tool_Manager:
-    def __init__(self, tools_file="tools.json", backup_dir="_BU"):
+class Device_Manager:
+    def __init__(self, tools_file=TOOLS_FILE, backup_dir=BACKUP_DIR):
         self.get_tools(tools_file)
         self.backup_dir = backup_dir
 

@@ -1,0 +1,17 @@
+{
+    "on_led_color": 65535,
+    "spindown_led_color": 34952,
+    "off_led_color": 4369,
+    "on_rgb_color": {
+        "bright": [0.51, 0.9, 0],
+        "dark": [0.6, 1, 0.1]
+    },
+    "spindown_rgb_color": {
+        "bright": [1, 0.59, 0],
+        "dark": [0, 0, 0]
+    },
+    "off_rgb_color": {
+        "bright": [0.1, 0.82, 0.9],
+        "dark": [0.1, 0.82, 0.9]
+    }
+}

@@ -1,6 +1,5 @@
 [
   {
-    "id_num": 367357352,
     "name": "MiterSaw",
     "gate_prefs": ["MS"],
     "button": {
@@ -10,7 +9,7 @@
     "volt": {
       "type": "ADS1115",
       "voltage_address": {
-        "board_address": 70,
+        "board_address": "0x49",
         "pin": 0
       },
       "sensitivity": 4
