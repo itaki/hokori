@@ -3,7 +3,6 @@ import logging
 from adafruit_servokit import ServoKit
 import os
 import time
-from _drop.blinky_bits import hex_to_int, get_full_path, backup_file
 
 DEVICE_FILE = 'config.json'
 GATES_FILE = 'gates.json'
@@ -11,7 +10,7 @@ BACKUP_DIR = '_BU'
 class Gate:
     def __init__(self, name, gate_info):
         self.name = name
-        self.address = hex_to_int(gate_info['io_location']['address'])
+        self.address = int(gate_info['io_location']['address'], 16)
         self.pin = gate_info['io_location']['pin']
         self.min = gate_info['min']
         self.max = gate_info['max']

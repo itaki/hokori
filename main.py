@@ -5,7 +5,6 @@ import logging
 
 from device_manager import Device_Manager
 from gate_manager import Gate_Manager
-from _drop.keybaord_manager import Keyboard_Manager
 
 # create some list of stuff I got
 DEVICE_FILE = 'config.json'
