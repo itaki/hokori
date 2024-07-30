@@ -1,5 +1,5 @@
 import time
-import blinky_bits
+import _drop.blinky_bits as blinky_bits
 import pygame
 from pygame.locals import *
 from gpiozero import LED, RGBLED, Button, DigitalOutputDevice
@@ -7,10 +7,10 @@ import board
 import busio
 import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
-from device_manager import Tool_Manager
+from _drop.device_manager_BU import Tool_Manager
 import voltage_sensor as vs
 from gate_manager import Gate_Manager, get_full_path
-import pg_gui
+import pygame.pg_gui as pg_gui
 
 TOOLS_FILE = 'tools.json'
 GATES_FILE = 'gates.json'

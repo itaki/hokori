@@ -2,7 +2,7 @@ from gpiozero import DigitalOutputDevice
 import time
 
 class Dust_collector:
-    def __init__(self, pin, min_uptime):
+    def __init__(self, address, pin, min_uptime):
         self.status = 'off'
         self.last_spin_up = time.time()
         self.min_uptime = min_uptime

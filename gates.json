@@ -1,7 +1,7 @@
 {
     "gates": {
         "HOSE": {
-            "physical_location": "first",
+            "physical_location": "By the Pi",
             "status": "closed",
             "io_location": {
                 "address": "0x42",
@@ -10,12 +10,22 @@
             "min": 40,
             "max": 130
         },
-        "MS": {
-            "physical_location": "second",
+        "MiterSaw_Gate": {
+            "physical_location": "Below the miter saw",
             "status": "closed",
             "io_location": {
                 "address": "0x42",
                 "pin": 1
+            },
+            "min": 30,
+            "max": 150
+        },
+        "MiterSaw_Left_Gate": {
+            "physical_location": "Below the miter saw to the left",
+            "status": "closed",
+            "io_location": {
+                "address": "0x42",
+                "pin": 2
             },
             "min": 30,
             "max": 150

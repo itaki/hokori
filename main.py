@@ -1,33 +1,41 @@
 import time 
+import json
+import os
+import logging
 
-from gpiozero import LED, RGBLED, Button, DigitalOutputDevice
-import board
-import busio
-import adafruit_ads1x15.ads1115 as ADS
-from adafruit_ads1x15.analog_in import AnalogIn
-import voltage_sensor as vs
 from device_manager import Device_Manager
 from gate_manager import Gate_Manager
-from blinky_bits import get_full_path, hex_to_int
+from _drop.keybaord_manager import Keyboard_Manager
 
 # create some list of stuff I got
-DEVICE_FILE = 'devices.json'
+DEVICE_FILE = 'config.json'
 GATES_FILE = 'gates.json'
 BACKUP_DIR = '_BU'
 
-tm = Device_Manager(DEVICE_FILE, BACKUP_DIR)
-gm = Gate_Manager(GATES_FILE, BACKUP_DIR) # create the gate manager
+# set logging level
+#LOG_LEVEL = os.environ.get('LOG_LEVEL', 'WARNING')
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
+logging.basicConfig(level=LOG_LEVEL)
+
+# Determine the directory where main.py is located
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Specify the location of config.json based on the current directory
+config_path = os.path.join(current_dir, DEVICE_FILE)
+gates_path = os.path.join(current_dir, GATES_FILE)
+
+dm = Device_Manager(config_path) # create the device manager
+#gm = Gate_Manager(gates_path) # create the gate manager
+
 
 # set which interfaces to use
 
 use_gui = False
 use_keyboard = False
+use_buttons = True
+use_voltage = False
+use_gates = False
 
-if use_gui: 
-    import pg_gui as pg_gui
-    pg_gui = pg_gui.PG_GUI()
-    gui_buttons = create_tool_gui_buttons()
-    gate_buttons = create_gate_gui_buttons()
 
 
 ################################################################################
@@ -35,17 +43,11 @@ if use_gui:
 ################################################################################
 
 
-run = True
+run = False
 
 if __name__ == '__main__':
     while run:
+        pass
 
-
-        if use_voltage:
-            tools_with_sensor = vs.get_tools_with_sensor(tm.tools)
-            
-
-        # run through all the tools to see if they are on
-        shop_manager()
     
-pygame.quit()
+

@@ -4,7 +4,7 @@ import shutil
 import os
 from datetime import datetime
 from gate_manager import Gate_Manager
-from blinky_bits import hex_to_int, get_full_path, backup_file, save_file
+from _drop.blinky_bits import hex_to_int, get_full_path, backup_file, save_file
 
 __all__ = ["GateManagerGUI", "main"]
 

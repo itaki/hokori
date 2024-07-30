@@ -1,9 +1,13 @@
 import json
+import logging
 from adafruit_servokit import ServoKit
 import os
 import time
-from blinky_bits import hex_to_int, get_full_path, backup_file
-from main import GATES_FILE, BACKUP_DIR
+from _drop.blinky_bits import hex_to_int, get_full_path, backup_file
+
+DEVICE_FILE = 'config.json'
+GATES_FILE = 'gates.json'
+BACKUP_DIR = '_BU'
 class Gate:
     def __init__(self, name, gate_info):
         self.name = name
@@ -19,7 +23,7 @@ class Gate:
             self.servo = ServoKit(channels=16, address=self.address).servo[self.pin]
             return True
         except Exception as e:
-            print(f"FAILED to create gate at address {self.address} on pin {self.pin}: {e}")
+            logging.debug(f"FAILED to create gate at address {self.address} on pin {self.pin}: {e}")
             return False
         
     def open(self):
@@ -50,26 +54,26 @@ class Gate_Manager:
         self.gates_file = gates_file
         self.backup_dir = backup_dir
         self.gates = {}
-        self.load_gates()
+        self.gates_dict = self.load_gates()
+        self.build_gates()
 
     def load_gates(self):
         '''Loads gates from a JSON file'''
-        path_to_gates_file = get_full_path(self.gates_file)
-        if os.path.exists(path_to_gates_file):
-            print(f"Loading gates from {path_to_gates_file}")
-            with open(path_to_gates_file, 'r') as f:
+        if os.path.exists(self.gates_file):
+            logging.debug(f"Loading gates from {self.gates_file}")
+            with open(self.gates_file, 'r') as f:
                 self.gates_dict = json.load(f)
-            self.build_gates()
+            return self.gates_dict
         else:
             self.gates_dict = {}
-            print('No gate file available')
+            logging.debug('No gate file available')
 
     def build_gates(self):
         '''Builds Gate objects from the loaded gate data'''
         self.gates = {}
         for name, gate_info in self.gates_dict['gates'].items():
             self.gates[name] = Gate(name, gate_info)
-            print(f'Gate {name} created with address {gate_info["io_location"]["address"]} and pin {gate_info["io_location"]["pin"]}')
+            logging.debug(f'Gate {name} created with address {gate_info["io_location"]["address"]} and pin {gate_info["io_location"]["pin"]}')
 
     def open_all_gates(self):
         '''Open all gates'''
@@ -86,19 +90,19 @@ class Gate_Manager:
         if name in self.gates:
             self.gates[name].open()
         else:
-            print(f"Gate {name} not found.")
+            logging.debug(f"Gate {name} not found.")
 
     def close_gate(self, name):
         '''Close a single gate by name'''
         if name in self.gates:
             self.gates[name].close()
         else:
-            print(f"Gate {name} not found.")
+            logging.debug(f"Gate {name} not found.")
 
     def view_gates(self):
         '''Prints a list of all gates'''
         for gate_key, gate_info in self.gates_dict['gates'].items():
-            print(f"Gate: {gate_key}, Physical Location: {gate_info['physical_location']}, Status: {gate_info['status']}, "
+            logging.debug(f"Gate: {gate_key}, Physical Location: {gate_info['physical_location']}, Status: {gate_info['status']}, "
           f"IO Location Address: {gate_info['io_location']['address']}, IO Location Pin: {gate_info['io_location']['pin']}, "
           f"Min: {gate_info['min']}, Max: {gate_info['max']}")
             
@@ -113,6 +117,7 @@ class Gate_Manager:
         return open_gates
     
     def set_gates(tools):
+        pass
         
 
 # Load JSON data

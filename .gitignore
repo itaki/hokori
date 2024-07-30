@@ -1,8 +1,10 @@
-config.json
-config.env
+#config.json
+#config.env
 
 # MAC crap
 **/.DS_Store
+.DS_Store
+._
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -10,6 +12,9 @@ __pycache__/
 
 # C extensions
 *.so
+
+# Backups and junk
+_*
 
 # Distribution / packaging
 bin/
