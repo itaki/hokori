@@ -24,7 +24,7 @@ config_path = os.path.join(current_dir, DEVICE_FILE)
 gates_path = os.path.join(current_dir, GATES_FILE)
 
 dm = Device_Manager(config_path) # create the device manager
-#gm = Gate_Manager(gates_path) # create the gate manager
+gm = Gate_Manager(gates_path) # create the gate manager
 
 
 # set which interfaces to use
