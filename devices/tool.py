@@ -1,24 +1,5 @@
-import os
-import json
-import time
-from gpiozero import PWMLED, RGBLED, Button, OutputDevice
-from pathlib import Path
-import voltage_sensor as vs
-import board
-import busio
-import adafruit_pca9685
-import get_full_path
 
-i2c = busio.I2C(board.SCL, board.SDA)
 
-TOOLS_FILE = 'tools.json'
-BACKUP_DIR = '_BU'
-on_led_color = 0xffff
-spindown_led_color = 0x8888
-off_led_color = 0x1111
-on_rgb_color = {'bright': (.51, .9, 0), 'dark': (.6, 1, .1)}
-spindown_rgb_color = {'bright': (1, .59, 0), 'dark': (0, 0, 0)}
-off_rgb_color = {'bright': (.1, .82, .90), 'dark': (.1, .82, .90)}
 
 class Tool:
     def __init__(self, tool):
@@ -120,40 +101,3 @@ class Tool:
             elif self.led_type == "RELAY":
                 self.led.off()
         print(f'----------->{self.name} turned OFF')
-
-class Tool_Manager:
-    def __init__(self, tools_file="tools.json", backup_dir="_BU"):
-        self.get_tools(tools_file)
-        self.backup_dir = backup_dir
-
-    def get_tools(self, file):
-        tools_list = []
-        tools = {}
-        if os.path.exists(file):  # if there is a tools file load it
-            file_path = get_full_path.path(file)  # set the file path
-            with open(file_path, 'r') as f:  # read the tool list
-                tools_list = json.load(f)  # load tool list into python
-
-            for tool in tools_list:
-                tools[tool['name']] = Tool(tool)  # build all the tools
-        self.tools = tools
-
-    def get_used_pins(self):
-        all_used_pins = []
-        for tool in self.tools:
-            selected_tool = self.tools[tool]
-            all_used_pins.extend(selected_tool.pins_used)
-        return all_used_pins
-
-    def whats_on_pin(self, pin):
-        for tool in self.tools:
-            selected_tool = self.tools[tool]
-            if pin in selected_tool.pins_used:
-                return selected_tool.name
-        return "No Tool"
-
-if __name__ == '__main__':
-    tm = Tool_Manager(TOOLS_FILE, BACKUP_DIR)
-    pins_in_use = tm.get_used_pins()
-    pins_in_use.sort()
-    print(f"{pins_in_use}")

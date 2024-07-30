@@ -1,0 +1,142 @@
+{
+    "info": [
+        { "name": "Shop with 1 hub connected to a button and led" }
+    ],
+    "devices": [
+        {
+            "type": "hub",
+            "label": "Main Hub",
+            "id": "main-hub",
+            "version": 1,
+            "gpio_expander": {
+                "type": "MCP23017",
+                "i2c_address": "0x20"
+            },
+            "pwm_servo": {
+                "type": "PCA9685",
+                "i2c_address": "0x42"
+            },
+            "ad_converter": {
+                "type": "ADS1115",
+                "i2c_address": "0x49"
+            }
+        },
+        {
+            "type": "tool",
+            "label": "Hose",
+            "id": "hose",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["HOSE"],
+                "last_used": 0,
+                "spin_down_time": 0
+            },
+            "button": {
+                "label": "Hose Button",
+                "id": "hose_button",
+                "type": "RGBLED_Button",
+                "physical_location": "By the Hose",
+                "connection": {
+                    "hub": "main-hub",
+                    "address": "0x20",
+                    "pin": 4
+                }
+            },
+            "led": {
+                "label": "Hose LED",
+                "id": "hose_button_LED",
+                "type": "RGBLED",
+                "physical_location": "On the Hose Button",
+                "connection": {
+                    "hub": "main-hub",
+                    "address": "0x20",
+                    "pins": [5, 6, 7]
+                }
+            },
+            "volt": {},
+            "keyboard_key": 0
+        },
+        {
+            "type": "dust_collector",
+            "label": "Main Collector",
+            "id": "main-collector",
+            "preferences": {
+                "last_used": 0,
+                "min_spin_down_time": 10
+            },
+            "relay": {
+                "label": "Main Collector Relay",
+                "id": "main_collector_relay",
+                "type": "Relay",
+                "physical_location": "By the collector",
+                "connection": {
+                    "hub": "main-hub",
+                    "address": "0x20",
+                    "pin": 8
+                },
+                "status": "off"
+            }
+        },
+        {
+            "type": "tool",
+            "label": "Miter Saw",
+            "id": "miter_saw",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["MiterSaw_Gate"],
+                "last_used": 0,
+                "spin_down_time": 10
+            },
+            "button": {},
+            "led": {},
+            "volt": {
+                "type": "ADS1115",
+                "amps": 20,
+                "voltage_address": {
+                    "board_address": "0x49",
+                    "pin": 0
+                },
+                "sensitivity": 4,
+                "status": "off"
+            },
+            "keyboard_key": 50,
+            "modifiers": [
+                {
+                    "label": "Miter Saw Button",
+                    "id": "miter_saw_button",
+                    "preferences": {
+                        "modifications": ["gates"],
+                        "gate_prefs": ["MiterSaw_Gate"]
+                    },
+                    "button": {
+                        "label": "MiterSaw Button",
+                        "id": "miter_saw_button",
+                        "type": "RGBLED_Button",
+                        "physical_location": "Above the miter saw",
+                        "connection": {
+                            "hub": "main-hub",
+                            "address": "0x20",
+                            "pin": 0
+                        },
+                        "status": "off"
+                    },
+                    "led": {
+                        "label": "Miter Saw Button LED",
+                        "id": "miter_saw_button_LED",
+                        "type": "RGBLED",
+                        "physical_location": "above the miter saw",
+                        "connection": {
+                            "hub": "main-hub",
+                            "address": "0x20",
+                            "pins": [1, 2, 3]
+                        },
+                        "preferences":{
+                            "off_color": [0, 0, 0],
+                            "on_color": [255, 255, 255]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

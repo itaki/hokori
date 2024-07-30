@@ -80,6 +80,8 @@ class Voltage_Sensor:
         #print(f"Current std dev: {current_std_dev}, Threshold: {self.std_dev_threshold}")
         return current_std_dev > self.std_dev_threshold
 
+        
+
 def get_tools_with_sensor(tools):
     '''Returns a list of tools that have a voltage sensor'''
     tools_with_sensor = []
@@ -90,6 +92,14 @@ def get_tools_with_sensor(tools):
         else:
             print(f"Tool {tool.name} does not have a voltage sensor")
     return tools_with_sensor
+
+def get_active_tools(tools):
+    '''Returns a list of tools that are currently on'''
+    active_tools = []
+    for tool in tools.values():
+        if hasattr(tool, 'voltage_sensor') and tool.voltage_sensor.am_i_on():
+            active_tools.append(tool.name)
+    return active_tools
 
 if __name__ == "__main__":
     pass

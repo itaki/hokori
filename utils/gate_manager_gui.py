@@ -3,13 +3,19 @@ import curses
 import shutil
 import os
 from datetime import datetime
-from gate_manager import Gate_Manager, get_full_path, GATES_FILE, BACKUP_DIR
+from gate_manager import Gate_Manager
+from _drop.blinky_bits import hex_to_int, get_full_path, backup_file, save_file
 
 __all__ = ["GateManagerGUI", "main"]
 
+
+def center_x(width, string):
+    '''Takes curses terminal width and a string and determines where to start it to center it'''
+    return int((width // 2) - (len(string) // 2) - len(string) % 2)
 class GateManagerGUI:
+    
     def __init__(self):
-        self.gm = Gate_Manager(GATES_FILE, BACKUP_DIR)
+        self.gm = Gate_Manager()
 
     def set_all_gates_angles(self):
         for gate_key in self.gm.gates.keys():
@@ -155,19 +161,13 @@ class GateManagerGUI:
         return False
 
     def save_gates(self):
-        full_path = get_full_path(GATES_FILE)
-        backup_dir_path = get_full_path(BACKUP_DIR)
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        backup_file_name = f"{os.path.basename(full_path).split('.')[0]}_{timestamp}.json"
-        backup_path = os.path.join(backup_dir_path, backup_file_name)
-        if not os.path.exists(backup_dir_path):
-            os.makedirs(backup_dir_path)
-        shutil.copyfile(full_path, backup_path)
-        print(f"Backup of {full_path} created at {backup_path}")
-        
-        with open(full_path, 'w') as f:
-            json.dump(self.gm.gates_dict, f, indent=4)
-        print(f"Gates configuration saved to {full_path}")
+        self.backup_gates()
+        save_file(self.gm.gates_dict, get_full_path("gates.json"))
+        print("Changes saved")
+    
+    def backup_gates(self):
+        backup_file(self.gm.gates_dict, get_full_path("gates.json"))
+        print("Backup saved")
 
 def main():
     gm_gui = GateManagerGUI()
