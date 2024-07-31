@@ -1,0 +1,16 @@
+{
+    "RGBLED_button_styles": {
+        "RGBLED_on_color": {
+            "name": "bright_purple",
+            "red": 65535,
+            "green": 0,
+            "blue": 65535
+        },
+        "RGBLED_off_color": {
+            "name": "dark_blue",
+            "red": 0,
+            "green": 0,
+            "blue": 28671
+        }
+    }
+}

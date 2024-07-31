@@ -1,65 +1,85 @@
-import json
-import board
-import busio
 from adafruit_mcp230xx.mcp23017 import MCP23017
 from adafruit_pca9685 import PCA9685
-from adafruit_ads1x15.ads1115 import ADS1115
+import adafruit_ads1x15.ads1115 as ADS
+from adafruit_bus_device.i2c_device import I2CDevice
 
 class Hub:
-    def __init__(self, hub_config):
-        self.type = hub_config['type']
-        self.label = hub_config['label']
-        self.id = hub_config['id']
-        self.version = hub_config['version']
+    def __init__(self, config, i2c):
+        self.id = config.get('id', 'unknown')
+        self.label = config.get('label', 'unknown')
+        self.version = config.get('version', 1)
+        self.i2c = i2c
 
-        # Initialize I2C bus
-        self.i2c = busio.I2C(board.SCL, board.SDA)
+        try:
+            self.gpio_expander = self.initialize_gpio_expander(config['gpio_expander'])
+            self.pwm_servo = self.initialize_pwm_servo(config['pwm_servo'])
+            self.ad_converter = self.initialize_ad_converter(config['ad_converter'])
+        except KeyError as e:
+            print(f"Configuration error: missing key {e} in hub configuration for {self.label}")
+        except ValueError as e:
+            print(f"I2C device error for hub {self.label}: {e}")
+        except Exception as e:
+            print(f"Unexpected error initializing hub {self.label}: {e}")
 
-        # Initialize devices based on the configuration
-        self.gpio_expander = self.init_gpio_expander(hub_config['gpio_expander'])
-        self.pwm_servo = self.init_pwm_servo(hub_config['pwm_servo'])
-        self.ad_converter = self.init_ad_converter(hub_config['ad_converter'])
+    def initialize_gpio_expander(self, config):
+        try:
+            address = int(config['i2c_address'], 16)
+            self.probe_i2c_device(address)
+            return MCP23017(self.i2c, address=address)
+        except KeyError as e:
+            raise KeyError(f"Missing key {e} in gpio_expander configuration")
+        except Exception as e:
+            raise Exception(f"Error initializing MCP23017: {e}")
 
-    def init_gpio_expander(self, gpio_expander_config):
-        address = int(gpio_expander_config['i2c_address'], 16)
-        return MCP23017(self.i2c, address=address)
+    def initialize_pwm_servo(self, config):
+        try:
+            address = int(config['i2c_address'], 16)
+            self.probe_i2c_device(address)
+            pwm = PCA9685(self.i2c, address=address)
+            pwm.frequency = 50  # Set the frequency to 50hz, adjust as needed
+            return pwm
+        except KeyError as e:
+            raise KeyError(f"Missing key {e} in pwm_servo configuration")
+        except Exception as e:
+            raise Exception(f"Error initializing PCA9685: {e}")
 
-    def init_pwm_servo(self, pwm_servo_config):
-        address = int(pwm_servo_config['i2c_address'], 16)
-        pca = PCA9685(self.i2c, address=address)
-        pca.frequency = 60  # Set frequency to 60hz, suitable for servos
-        return pca
+    def initialize_ad_converter(self, config):
+        try:
+            address = int(config['i2c_address'], 16)
+            self.probe_i2c_device(address)
+            return ADS.ADS1115(self.i2c, address=address)
+        except KeyError as e:
+            raise KeyError(f"Missing key {e} in ad_converter configuration")
+        except Exception as e:
+            raise Exception(f"Error initializing ADS1115: {e}")
 
-    def init_ad_converter(self, ad_converter_config):
-        address = int(ad_converter_config['i2c_address'], 16)
-        return ADS1115(self.i2c, address=address)
+    def probe_i2c_device(self, address):
+        try:
+            with I2CDevice(self.i2c, address):
+                pass  # Device found
+        except ValueError:
+            raise ValueError(f"No I2C device found at address: 0x{address:02X}")
 
-    @staticmethod
-    def from_json(json_str):
-        hub_config = json.loads(json_str)
-        return Hub(hub_config)
+    def initialize_components(self):
+        # Initialization logic for the components if needed
+        pass
 
-# Example usage
+# Example usage:
 if __name__ == "__main__":
-    hub_json = '''
-    {
-        "type": "hub",
-        "label": "Main Hub",
-        "id": "main-hub",
-        "version": 1,
-        "gpio_expander": {
-            "type": "MCP23017",
-            "i2c_address": "0x20"
-        },
-        "pwm_servo": {
-            "type": "PCA9685",
-            "i2c_address": "0x42"
-        },
-        "ad_converter": {
-            "type": "ADS1115",
-            "i2c_address": "0x49"
-        }
-    }
-    '''
-    hub = Hub.from_json(hub_json)
-    print(f"Hub {hub.label} with ID {hub.id} initialized.")
+    import json
+    import board
+    import busio
+
+    # Load configuration
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+
+    # Initialize I2C
+    i2c = busio.I2C(board.SCL, board.SDA)
+
+    # Initialize hubs from config
+    hubs = [Hub(device, i2c) for device in config['devices'] if device['type'] == 'hub']
+
+    # Print initialized hubs for verification
+    for hub in hubs:
+        print(f"Initialized hub: {hub.label} (ID: {hub.id}, Version: {hub.version})")
