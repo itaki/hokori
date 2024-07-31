@@ -1,52 +1,56 @@
-import time 
-import json
+import time
 import os
+import board
+import busio
 import logging
+from devices.tool import Tool
+from devices.device_manager import Device_Manager
+from devices.gate_manager import Gate_Manager
+from utils.style_manager import Style_Manager
 
-from device_manager import Device_Manager
-from gate_manager import Gate_Manager
-
-# create some list of stuff I got
+# Constants for configuration files and backup directory
 DEVICE_FILE = 'config.json'
 GATES_FILE = 'gates.json'
 BACKUP_DIR = '_BU'
+STYLES = 'styles.json'
 
-# set logging level
-#LOG_LEVEL = os.environ.get('LOG_LEVEL', 'WARNING')
-LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
-logging.basicConfig(level=LOG_LEVEL)
+style_manager = Style_Manager(STYLES)
+styles = style_manager.get_styles()
 
-# Determine the directory where main.py is located
-current_dir = os.path.dirname(os.path.abspath(__file__))
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
-# Specify the location of config.json based on the current directory
-config_path = os.path.join(current_dir, DEVICE_FILE)
-gates_path = os.path.join(current_dir, GATES_FILE)
+# Main loop
+def main():
+    try:
+        # Initialize I2C
+        i2c = busio.I2C(board.SCL, board.SDA)
+        
+        # Initialize Device Manager and Gate Manager
+        device_manager = Device_Manager(device_file=DEVICE_FILE)
+        gate_manager = Gate_Manager(GATES_FILE, i2c)
 
-dm = Device_Manager(config_path) # create the device manager
-gm = Gate_Manager(gates_path) # create the gate manager
+        # Use tools from the Device Manager
+        tools = device_manager.tools
+        
+        logger.info("Tool initialization complete.")
+        
+        # Main loop to check for button presses
+        while True:
+            for tool in tools.values():
+                tool.check_button()
+            time.sleep(0.1)  # Small delay to avoid busy waiting
 
+    except FileNotFoundError as e:
+        logger.error(e)
+        print(e)
+        exit(1)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        print(f"Unexpected error: {e}")
+        exit(1)
 
-# set which interfaces to use
-
-use_gui = False
-use_keyboard = False
-use_buttons = True
-use_voltage = False
-use_gates = False
-
-
-
-################################################################################
-# START APP HERE
-################################################################################
-
-
-run = False
-
-if __name__ == '__main__':
-    while run:
-        pass
-
-    
+if __name__ == "__main__":
+    main()
 
