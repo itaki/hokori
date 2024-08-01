@@ -3,6 +3,7 @@ import os
 import board
 import busio
 import logging
+import json
 from devices.tool import Tool
 from devices.device_manager import Device_Manager
 from devices.gate_manager import Gate_Manager
@@ -12,10 +13,7 @@ from utils.style_manager import Style_Manager
 DEVICE_FILE = 'config.json'
 GATES_FILE = 'gates.json'
 BACKUP_DIR = '_BU'
-STYLES = 'styles.json'
-
-style_manager = Style_Manager(STYLES)
-styles = style_manager.get_styles()
+STYLES_FILE = 'styles.json'
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -31,15 +29,20 @@ def main():
         device_manager = Device_Manager(device_file=DEVICE_FILE)
         gate_manager = Gate_Manager(GATES_FILE, i2c)
 
+        # Load styles from the styles.json file
+        style_manager = Style_Manager(STYLES_FILE)
+        styles = style_manager.get_styles()
+
         # Use tools from the Device Manager
-        tools = device_manager.tools
+        tools = [Tool(tool, i2c, styles) for tool in device_manager.devices if tool['type'] == 'tool']
         
         logger.info("Tool initialization complete.")
         
-        # Main loop to check for button presses
+        # Main loop to check for button presses and voltage
         while True:
-            for tool in tools.values():
+            for tool in tools:
                 tool.check_button()
+                tool.check_voltage()
             time.sleep(0.1)  # Small delay to avoid busy waiting
 
     except FileNotFoundError as e:
@@ -53,4 +56,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

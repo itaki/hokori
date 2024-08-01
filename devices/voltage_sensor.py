@@ -1,105 +1,73 @@
-import os
-import json
 import board
 import busio
-import time
-import math
-
-# Create the I2C bus
-i2c = busio.I2C(board.SCL, board.SDA)
-
-# Import module for ADS1115
-import adafruit_ads1x15.ads1115 as ADS
+import logging
+from adafruit_ads1x15.ads1115 import ADS1115
 from adafruit_ads1x15.analog_in import AnalogIn
 
-ads_pin_numbers = {0: ADS.P0, 1: ADS.P1, 2: ADS.P2, 3: ADS.P3}
+# Set up logging
+logger = logging.getLogger(__name__)
 
-class Voltage_Sensor:
-    def __init__(self, volt, sample_size=100):
-        if 'voltage_address' not in volt:
-            raise ValueError("Missing 'voltage_address' in voltage sensor configuration")
-        
-        self.board_address = volt['voltage_address']['board_address']
-        self.pin_number = ads_pin_numbers[volt['voltage_address']['pin']]
-        self.sensitivity = volt['sensitivity']
-        self.sample_size = sample_size
-        self.readings = []
-        self.board_exists = None
-        self.sensor_exists = False
+# Constants
+VERSION_SENSITIVITY_MAP = {
+    "5 amp": 0.185,
+    "20 amp": 0.100,
+    "30 amp": 0.066
+}
+SAMPLE_SIZE = 100
+
+class VoltageSensor:
+    def __init__(self, volt_config, i2c):
+        self.label = volt_config.get('label', 'unknown')
+        self.board_address = int(volt_config['voltage_address']['board_address'], 16)
+        self.pin = volt_config['voltage_address']['pin']
+        self.multiplier = volt_config.get('multiplier', 1)
+        self.sensitivity = VERSION_SENSITIVITY_MAP[volt_config['version']]
+        self.i2c = i2c
+        self.ads = None
+        self.chan = None
         self.std_dev_threshold = None
+        self.readings = []
 
+        self.initialize_sensor()
+        self.initialize_std_dev_threshold()
+
+    def initialize_sensor(self):
         try:
-            self.ads = ADS.ADS1115(i2c, address=self.board_address)
-            self.chan = AnalogIn(self.ads, self.pin_number)
-            self.board_exists = True
-            print(f"⚡ Adding Voltage Sensor on pin {self.pin_number} on ADS1115 at address {hex(self.board_address)}")
-            self.initialize_std_dev_threshold()
+            self.ads = ADS1115(self.i2c, address=self.board_address)
+            self.chan = AnalogIn(self.ads, self.pin)
+            logger.info(f"Voltage sensor {self.label} initialized at address {hex(self.board_address)} on pin {self.pin}")
         except Exception as e:
-            print(f"■■■■■ ERROR! ■■■■■■  ADS11x5 not found at {hex(self.board_address)}. Cannot create voltage sensor: {e}")
-            self.board_exists = False
+            logger.error(f"Error initializing voltage sensor {self.label}: {e}")
 
     def get_reading(self):
-        '''Gets a new reading from the sensor'''
-        if self.board_exists:
-            try:
-                reading = self.chan.voltage
-                self.readings.append(reading)
-                if len(self.readings) > self.sample_size:
-                    self.readings.pop(0)
-                return reading
-            except Exception as e:
-                print(f"ERROR GETTING READING FROM {hex(self.board_address)} at PIN {self.pin_number}: {e}")
-                return 0
+        if self.chan is not None:
+            return self.chan.voltage
         return 0
 
     def calculate_std_dev(self):
-        '''Calculates the standard deviation of the readings'''
         if len(self.readings) == 0:
             return 0
         mean = sum(self.readings) / len(self.readings)
         variance = sum((x - mean) ** 2 for x in self.readings) / len(self.readings)
-        std_dev = math.sqrt(variance)
-        return std_dev
+        return variance ** 0.5
 
     def initialize_std_dev_threshold(self):
-        '''Initializes the standard deviation threshold based on initial readings when the tool is assumed to be OFF'''
-        initial_readings = []
-        for _ in range(self.sample_size):
-            initial_readings.append(self.get_reading())
-
+        initial_readings = [self.get_reading() for _ in range(SAMPLE_SIZE)]
+        self.readings.extend(initial_readings)
         initial_std_dev = self.calculate_std_dev()
-        self.std_dev_threshold = initial_std_dev * self.sensitivity
-        print(f"Initialized standard deviation threshold to {self.std_dev_threshold}")
+        self.std_dev_threshold = initial_std_dev * self.multiplier
+        logger.info(f"Initialized std_dev_threshold for {self.label}: {self.std_dev_threshold}")
 
     def am_i_on(self):
-        '''Determines if the device plugged into the sensor is currently on'''
-        if not self.board_exists:
-            return False
-        self.get_reading()
+        current_read = self.get_reading()
+        self.readings.append(current_read)
+        if len(self.readings) > SAMPLE_SIZE:
+            self.readings.pop(0)
         current_std_dev = self.calculate_std_dev()
-        #print(f"Current std dev: {current_std_dev}, Threshold: {self.std_dev_threshold}")
         return current_std_dev > self.std_dev_threshold
 
-        
-
-def get_tools_with_sensor(tools):
-    '''Returns a list of tools that have a voltage sensor'''
-    tools_with_sensor = []
-    for tool in tools.values():
-        if hasattr(tool, 'voltage_sensor'):
-            print(f"Tool {tool.name} has a voltage sensor")
-            tools_with_sensor.append(tool.name)
+    def check_voltage(self):
+        if self.am_i_on():
+            logger.info(f"Voltage detected, sensor {self.label} is on.")
         else:
-            print(f"Tool {tool.name} does not have a voltage sensor")
-    return tools_with_sensor
-
-def get_active_tools(tools):
-    '''Returns a list of tools that are currently on'''
-    active_tools = []
-    for tool in tools.values():
-        if hasattr(tool, 'voltage_sensor') and tool.voltage_sensor.am_i_on():
-            active_tools.append(tool.name)
-    return active_tools
-
-if __name__ == "__main__":
-    pass
+            logger.info(f"No voltage detected, sensor {self.label} is off.")

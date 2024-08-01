@@ -1,109 +1,41 @@
 import time
 import board
 import busio
-import threading
-from digitalio import Direction, Pull
-from adafruit_mcp230xx.mcp23017 import MCP23017
+from adafruit_pca9685 import PCA9685
 
 # Set up I2C
 i2c = busio.I2C(board.SCL, board.SDA)
 
-# Create MCP23017 instance at address 0x20
-mcp = MCP23017(i2c, address=0x20)
+# Create PCA9685 instance at address 0x42
+pca = PCA9685(i2c, address=0x40)
+pca.frequency = 1000  # Set frequency to 1000 Hz for LED control
 
-# Set up RGB LED on pins 5, 6, 7
-led_red = mcp.get_pin(5)
-led_green = mcp.get_pin(6)
-led_blue = mcp.get_pin(7)
+# Set up RGB LED on pins 13, 14, 15
+led_red = pca.channels[0]
+led_green = pca.channels[1]
+led_blue = pca.channels[2]
 
-# Configure pins as outputs
-led_red.direction = Direction.OUTPUT
-led_green.direction = Direction.OUTPUT
-led_blue.direction = Direction.OUTPUT
-
-# Set initial state to off
-led_red.value = False
-led_green.value = False
-led_blue.value = False
-
-# Define the software PWM function
-def pwm_cycle(red, green, blue, cycles=100):
-    red_on_time = red / 255.0
-    green_on_time = green / 255.0
-    blue_on_time = blue / 255.0
-    cycle_time = 0.02  # 20ms cycle time for a smooth PWM
-
-    for _ in range(cycles):
-        start_time = time.monotonic()
-        
-        # Turn on LEDs based on their duty cycle
-        led_red.value = red_on_time > 0
-        led_green.value = green_on_time > 0
-        led_blue.value = blue_on_time > 0
-
-        # Determine the minimum on-time to sleep
-        min_on_time = min(red_on_time, green_on_time, blue_on_time)
-        if min_on_time > 0:
-            time.sleep(min_on_time)
-        
-        # Turn off LEDs as their on-time elapses
-        if red_on_time < green_on_time:
-            led_red.value = False
-            if green_on_time - red_on_time > 0:
-                time.sleep(green_on_time - red_on_time)
-            led_green.value = False
-            if blue_on_time - green_on_time > 0:
-                time.sleep(blue_on_time - green_on_time)
-            led_blue.value = False
-        else:
-            led_green.value = False
-            if red_on_time - green_on_time > 0:
-                time.sleep(red_on_time - green_on_time)
-            led_red.value = False
-            if blue_on_time - red_on_time > 0:
-                time.sleep(blue_on_time - red_on_time)
-            led_blue.value = False
-
-        # Ensure the cycle time is maintained
-        elapsed_time = time.monotonic() - start_time
-        if elapsed_time < cycle_time:
-            time.sleep(cycle_time - elapsed_time)
-
-# Function to run the PWM cycle in a separate thread
-def run_pwm_cycle(red, green, blue):
-    while True:
-        pwm_cycle(red, green, blue, cycles=50)
+# Function to set the LED to a specific color
+def set_led_color(red, green, blue):
+    # Correct logic for common anode RGB LED
+    led_red.duty_cycle = red
+    led_green.duty_cycle = green
+    led_blue.duty_cycle = blue
 
 # Test colors
 colors = {
-    "red": (255, 0, 0),
-    "green": (0, 255, 0),
-    "blue": (0, 0, 255),
-    "yellow": (255, 255, 0),
-    "cyan": (0, 255, 255),
-    "magenta": (255, 0, 255),
-    "white": (255, 255, 255),
-    "off": (0, 0, 0),
+    "red": (0, 0xFFFF, 0xFFFF),       # Turn on red (turn off green and blue)
+    "green": (0xFFFF, 0, 0xFFFF),     # Turn on green (turn off red and blue)
+    "blue": (0xFFFF, 0xFFFF, 0),      # Turn on blue (turn off red and green)
+    "yellow": (0, 0, 0xFFFF),         # Turn on red and green (turn off blue)
+    "cyan": (0xFFFF, 0, 0),           # Turn on green and blue (turn off red)
+    "magenta": (0, 0xFFFF, 0),        # Turn on red and blue (turn off green)
+    "white": (0, 0, 0),               # Turn on all colors
+    "off": (0xFFFF, 0xFFFF, 0xFFFF),  # Turn off all colors
 }
 
-# Function to switch colors
-def switch_colors():
+while True:
     for color_name, (red, green, blue) in colors.items():
         print(f"Setting LED to {color_name}")
-        global current_color
-        current_color = (red, green, blue)
-        time.sleep(2)
-
-# Create a thread for the PWM cycle
-pwm_thread = threading.Thread(target=run_pwm_cycle, args=(0, 0, 0))
-pwm_thread.daemon = True  # Allows thread to be killed when main program exits
-pwm_thread.start()
-
-# Main loop to switch colors every 2 seconds
-current_color = (0, 0, 0)
-switch_thread = threading.Thread(target=switch_colors)
-switch_thread.start()
-
-while switch_thread.is_alive():
-    red, green, blue = current_color
-    pwm_cycle(red, green, blue, cycles=50)
+        set_led_color(red, green, blue)
+        time.sleep(1)
