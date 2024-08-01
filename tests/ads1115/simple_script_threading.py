@@ -1,6 +1,7 @@
 import time
 import threading
 import logging
+import os
 import board
 import busio
 import adafruit_ads1x15.ads1115 as ADS
@@ -17,8 +18,23 @@ ADS_PIN_NUMBERS = {0: ADS.P0, 1: ADS.P1, 2: ADS.P2, 3: ADS.P3}
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Example JSON configuration
+config = {
+    "volt": {
+        "label": "VS for miter saw",
+        "type": "ADS1115",
+        "version": "20 amp",
+        "voltage_address": {
+            "board_address": "0x49",
+            "pin": 0
+        },
+        "multiplier": 3,
+        "status": "off"
+    }
+}
+
 class VoltageSensor:
-    def __init__(self, volt, i2c, sensor_detection_threshold=SENSOR_DETECTION_THRESHOLD, error_threshold=ERROR_THRESHOLD, min_readings=NUM_SAMPLES):
+    def __init__(self, volt, sensor_detection_threshold=SENSOR_DETECTION_THRESHOLD, error_threshold=ERROR_THRESHOLD, min_readings=NUM_SAMPLES):
         self.label = volt.get('label', 'unknown')
         self.board_address = int(volt['voltage_address']['board_address'], 16)
         self.pin_number = ADS_PIN_NUMBERS[volt['voltage_address']['pin']]
@@ -103,32 +119,17 @@ class VoltageSensor:
         self.thread.join()
 
 if __name__ == "__main__":
-    # Example JSON configuration
-    config = {
-        "volt": {
-            "label": "VS for miter saw",
-            "type": "ADS1115",
-            "version": "20 amp",
-            "voltage_address": {
-                "board_address": "0x49",
-                "pin": 0
-            },
-            "multiplier": 3,
-            "status": "off"
-        }
-    }
-
     # Create the I2C bus
     i2c = busio.I2C(board.SCL, board.SDA)
 
     sensor_config = config["volt"]
-    voltage_sensor = VoltageSensor(sensor_config, i2c)
+    voltage_sensor = VoltageSensor(sensor_config)
 
     try:
         while True:
             is_on = voltage_sensor.am_i_on()
             status = "ON" if is_on else "OFF"
             logger.info(f"Tool is {status}")
-            time.sleep(0.001)  # Adjust the delay as necessary
+            time.sleep(0.001)  # Reduced delay to make it run faster
     except KeyboardInterrupt:
         voltage_sensor.stop()

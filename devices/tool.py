@@ -70,7 +70,9 @@ class Tool:
 
     def check_voltage(self):
         if self.voltage_sensor:
-            self.voltage_sensor.check_voltage()
+            is_on = self.voltage_sensor.am_i_on()
+            status = "ON" if is_on else "OFF"
+            logger.info(f"{self.label} is {status}")
 
 # Example usage
 if __name__ == "__main__":
@@ -86,8 +88,13 @@ if __name__ == "__main__":
     styles = style_manager.get_styles()
     
     tools = [Tool(tool, i2c, styles) for tool in config['devices'] if tool['type'] == 'tool']
-    while True:
+    try:
+        while True:
+            for tool in tools:
+                tool.check_button()
+                tool.check_voltage()
+            time.sleep(0.1)
+    except KeyboardInterrupt:
         for tool in tools:
-            tool.check_button()
-            tool.check_voltage()
-        time.sleep(0.1)
+            if tool.voltage_sensor:
+                tool.voltage_sensor.stop()
