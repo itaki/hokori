@@ -12,8 +12,7 @@ parent_dir = os.path.dirname(base_dir)
 sys.path.append(parent_dir)
 
 from devices.rgbled_button import RGBLED_Button
-from devices.voltage_sensor import VoltageSensor
-from utils.style_manager import Style_Manager
+from devices.voltage_sensor import Voltage_Sensor
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -24,8 +23,7 @@ class Tool:
         self.id = tool_config.get('id', 'unknown')
         self.label = tool_config.get('label', 'unknown')
         self.preferences = tool_config.get('preferences', {})
-        self.status = 'off'
-        self.last_status = 'off'  # Keep track of the last status
+        self.status = tool_config.get('status', 'off')  # Initialize status
         self.override = False
         self.gate_prefs = self.preferences.get('gate_prefs', [])
         self.spin_down_time = self.preferences.get('spin_down_time', 0)
@@ -48,9 +46,6 @@ class Tool:
     def initialize_button(self, btn_config):
         if btn_config:
             try:
-                # Log the button configuration being passed
-                logger.debug(f"Button configuration for tool {self.label}: {btn_config}")
-                logger.debug(f"Button configuration type for tool {self.label}: {type(btn_config)}")
                 self.button = RGBLED_Button(btn_config, self.i2c, self.styles_path)
                 logger.info(f"Button initialized for tool {self.label}")
             except KeyError as e:
@@ -63,24 +58,32 @@ class Tool:
     def initialize_voltage_sensor(self, volt_config):
         if volt_config:
             try:
-                self.voltage_sensor = VoltageSensor(volt_config, self.i2c)
+                self.voltage_sensor = Voltage_Sensor(volt_config, self.i2c)
                 logger.info(f"Voltage sensor initialized for tool {self.label}")
             except KeyError as e:
                 logger.error(f"Configuration error: missing key {e} in voltage sensor configuration for {self.label}")
             except Exception as e:
-                logger.error(f"Unexpected error initializing voltage sensor for {self.label}: {e}")
+                logger.error(f"Unexpected error initializing voltage sensor for tool {self.label}: {e}")
 
     def check_button(self):
         if self.button:
             self.button.check_button()
+            if self.button.button_state:
+                self.set_status('on')
+            else:
+                self.set_status('off')
 
     def check_voltage(self):
         if self.voltage_sensor:
-            is_on = self.voltage_sensor.am_i_on()
-            status = "ON" if is_on else "OFF"
-            if status != self.last_status:
-                logger.info(f"{self.label} is {status}")
-                self.last_status = status
+            if self.voltage_sensor.am_i_on():
+                self.set_status('on')
+            else:
+                self.set_status('off')
+
+    def set_status(self, status):
+        if self.status != status:
+            self.status = status
+            logger.info(f"Tool {self.label} status changed to {self.status}")
 
 # Example usage
 if __name__ == "__main__":
