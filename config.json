@@ -29,6 +29,7 @@
             "type": "tool",
             "label": "Hose",
             "id": "hose",
+            "status": "off",
             "preferences": {
                 "use_collector": true,
                 "gate_prefs": ["HOSE"],
@@ -85,6 +86,7 @@
             "type": "tool",
             "label": "Miter Saw",
             "id": "miter_saw",
+            "status": "off",
             "preferences": {
                 "use_collector": true,
                 "gate_prefs": ["MiterSaw_Gate"],

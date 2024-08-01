@@ -2,14 +2,17 @@ import os
 import json
 import board
 import busio
+import logging
 from devices.hub import Hub
 from devices.tool import Tool
 
 DEVICE_FILE = 'config.json'
+logger = logging.getLogger(__name__)
 
 class Device_Manager:
-    def __init__(self, device_file=DEVICE_FILE):
+    def __init__(self, device_file=DEVICE_FILE, styles_path=None):
         self.device_file = device_file
+        self.styles_path = styles_path
         self.i2c = busio.I2C(board.SCL, board.SDA)
         self.devices = self.get_devices(device_file)
         self.hubs = self.create_hubs(self.devices)
@@ -31,7 +34,7 @@ class Device_Manager:
                 try:
                     hubs[hub_id] = Hub(device, self.i2c)
                 except Exception as e:
-                    print(f"Error initializing hub {hub_id}: {e}")
+                    logger.error(f"Error initializing hub {hub_id}: {e}")
         return hubs
 
     def create_tools(self, devices):
@@ -40,13 +43,13 @@ class Device_Manager:
             if device['type'] == 'tool':
                 tool_id = device['id']
                 try:
-                    tools[tool_id] = Tool(device, self.i2c)
+                    tools[tool_id] = Tool(device, self.i2c, self.styles_path)
                 except Exception as e:
-                    print(f"Error initializing tool {tool_id}: {e}")
+                    logger.error(f"Error initializing tool {tool_id}: {e}")
         return tools
 
 # Example usage
 if __name__ == "__main__":
-    manager = Device_Manager()
+    manager = Device_Manager(styles_path='styles.json')
     print(manager.hubs)
     print(manager.tools)

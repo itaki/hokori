@@ -1,134 +1,98 @@
-import time
-import threading
-import logging
 import board
 import busio
-import adafruit_ads1x15.ads1115 as ADS
+import logging
+from adafruit_ads1x15.ads1115 import ADS1115
 from adafruit_ads1x15.analog_in import AnalogIn
-
-# Constants
-NUM_SAMPLES = 50
-SENSOR_DETECTION_THRESHOLD = 1.6
-ERROR_THRESHOLD = 2.5
-TRIGGER_THRESHOLD = 1.003
-ADS_PIN_NUMBERS = {0: ADS.P0, 1: ADS.P1, 2: ADS.P2, 3: ADS.P3}
+import threading
+import time
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class VoltageSensor:
-    def __init__(self, volt, i2c, sensor_detection_threshold=SENSOR_DETECTION_THRESHOLD, error_threshold=ERROR_THRESHOLD, min_readings=NUM_SAMPLES):
-        self.label = volt.get('label', 'unknown')
-        self.board_address = int(volt['voltage_address']['board_address'], 16)
-        self.pin_number = ADS_PIN_NUMBERS[volt['voltage_address']['pin']]
-        self.sensor_detection_threshold = sensor_detection_threshold
-        self.error_threshold = error_threshold
-        self.min_readings = min_readings
-        self.readings = []
-        self.error_raised = False
-        self.sensor_exists = True
-        self.board_exists = None
-        self.trigger = None
-        self.lock = threading.Lock()
-        self._stop_thread = False
+# Constants
+VERSION_SENSITIVITY_MAP = {
+    "5 amp": 0.185,
+    "20 amp": 0.100,
+    "30 amp": 0.066
+}
+SAMPLE_SIZE = 50
+TRIGGER_THRESHOLD = 1.003
 
+class Voltage_Sensor:
+    def __init__(self, volt_config, i2c):
+        self.label = volt_config.get('label', 'unknown')
+        self.board_address = int(volt_config['voltage_address']['board_address'], 16)
+        self.pin = volt_config['voltage_address']['pin']
+        self.multiplier = volt_config.get('multiplier', 1)
+        self.sensitivity = VERSION_SENSITIVITY_MAP[volt_config['version']]
+        self.i2c = i2c
+        self.ads = None
+        self.chan = None
+        self.std_dev_threshold = None
+        self.readings = []
+        self.trigger = None
+        self.status = 'off'
+        self.last_status = 'off'
+
+        self.initialize_sensor()
+        self.initialize_std_dev_threshold()
+
+        self.stop_event = threading.Event()
+        self.thread = threading.Thread(target=self.monitor_voltage)
+        self.thread.start()
+
+    def initialize_sensor(self):
         try:
-            self.chan = AnalogIn(ADS.ADS1115(i2c, address=self.board_address), self.pin_number)
-            self.board_exists = True
-            logger.info(f"Adding Voltage Sensor on pin {self.pin_number} on ADS1115 at address {hex(self.board_address)}")
-            reading = self.get_reading()
-            logger.info(f"Current voltage reading is {reading}")
-            self.set_trigger_voltage()
-            self.thread = threading.Thread(target=self.collect_readings)
-            self.thread.start()
+            self.ads = ADS1115(self.i2c, address=self.board_address)
+            self.chan = AnalogIn(self.ads, self.pin)
+            logger.info(f"Voltage sensor {self.label} initialized at address {hex(self.board_address)} on pin {self.pin}")
         except Exception as e:
-            logger.error(f"ADS1115 not found at {hex(self.board_address)}. Cannot create voltage sensor")
-            self.board_exists = False
-            logger.exception(e)
+            logger.error(f"Error initializing voltage sensor {self.label}: {e}")
 
     def get_reading(self):
-        if self.board_exists:
-            reading = self.chan.voltage
-            with self.lock:
-                self.readings.append(reading)
-                if len(self.readings) > self.min_readings:
-                    self.readings.pop(0)
-                max_reading = max(self.readings)
-                self.reading = max_reading
-            return max_reading
-        else:
-            return 0
+        if self.chan is not None:
+            return self.chan.voltage
+        return 0
 
-    def collect_readings(self):
-        while not self._stop_thread:
-            self.get_reading()
+    def calculate_std_dev(self):
+        if len(self.readings) == 0:
+            return 0
+        mean = sum(self.readings) / len(self.readings)
+        variance = sum((x - mean) ** 2 for x in self.readings) / len(self.readings)
+        return variance ** 0.5
+
+    def initialize_std_dev_threshold(self):
+        initial_readings = [self.get_reading() for _ in range(SAMPLE_SIZE)]
+        self.readings.extend(initial_readings)
+        initial_std_dev = self.calculate_std_dev()
+        self.std_dev_threshold = initial_std_dev * self.multiplier
+        self.trigger = max(self.readings) * TRIGGER_THRESHOLD
+        logger.info(f"Initialized std_dev_threshold for {self.label}: {self.std_dev_threshold}")
+
+    def monitor_voltage(self):
+        while not self.stop_event.is_set():
+            self.update_status()
             time.sleep(0.001)
 
-    def in_good_range(self):
-        if self.sensor_detection_threshold < self.reading < self.error_threshold:
-            self.error_raised = False
-            self.sensor_exists = True
-            return True
-        elif not self.error_raised:
-            self.error_raised = True
-            if self.sensor_detection_threshold > self.reading:
-                logger.warning(f"No sensor on pin {self.pin_number} at address {hex(self.board_address)}")
-            if self.reading > self.error_threshold:
-                logger.warning(f"Problem with sensor on pin {self.pin_number} at address {hex(self.board_address)}")
-        self.sensor_exists = False
-        return False
+    def update_status(self):
+        current_read = self.get_reading()
+        self.readings.append(current_read)
+        if len(self.readings) > SAMPLE_SIZE:
+            self.readings.pop(0)
+        current_max = max(self.readings)
+
+        if current_max > self.trigger:
+            self.status = 'on'
+        else:
+            self.status = 'off'
+
+        if self.status != self.last_status:
+            logger.info(f"Tool {self.label} - Method: Sensor - Status: {self.status}")
+            self.last_status = self.status
 
     def am_i_on(self):
-        if self.board_exists:
-            reading = self.reading
-            if self.in_good_range() and self.sensor_exists:
-                return reading > self.trigger
-            elif self.in_good_range():
-                self.set_trigger_voltage()
-                return self.am_i_on()
-            else:
-                return False
-        else:
-            return False
-
-    def set_trigger_voltage(self):
-        reading = self.reading
-        if self.in_good_range():
-            self.trigger = reading * TRIGGER_THRESHOLD
-            logger.info(f"Setting trigger point on pin {self.pin_number} at address {hex(self.board_address)} to {self.trigger}")
+        return self.status == 'on'
 
     def stop(self):
-        self._stop_thread = True
+        self.stop_event.set()
         self.thread.join()
-
-if __name__ == "__main__":
-    # Example JSON configuration
-    config = {
-        "volt": {
-            "label": "VS for miter saw",
-            "type": "ADS1115",
-            "version": "20 amp",
-            "voltage_address": {
-                "board_address": "0x49",
-                "pin": 0
-            },
-            "multiplier": 3,
-            "status": "off"
-        }
-    }
-
-    # Create the I2C bus
-    i2c = busio.I2C(board.SCL, board.SDA)
-
-    sensor_config = config["volt"]
-    voltage_sensor = VoltageSensor(sensor_config, i2c)
-
-    try:
-        while True:
-            is_on = voltage_sensor.am_i_on()
-            status = "ON" if is_on else "OFF"
-            logger.info(f"Tool is {status}")
-            time.sleep(0.001)  # Adjust the delay as necessary
-    except KeyboardInterrupt:
-        voltage_sensor.stop()
