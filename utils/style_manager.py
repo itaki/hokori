@@ -18,9 +18,12 @@ class Style_Manager:
         try:
             with open(self.styles_path, 'r') as f:
                 return json.load(f)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON decode error in styles file: {e}")
         except Exception as e:
             logger.error(f"Failed to load styles: {e}")
-            return self.default_styles()
+
+        return self.default_styles()
 
     def get_styles(self):
         return self.styles

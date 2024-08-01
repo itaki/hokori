@@ -20,11 +20,12 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class Tool:
-    def __init__(self, tool_config, i2c, styles):
+    def __init__(self, tool_config, i2c, styles_path):
         self.id = tool_config.get('id', 'unknown')
         self.label = tool_config.get('label', 'unknown')
         self.preferences = tool_config.get('preferences', {})
         self.status = 'off'
+        self.last_status = 'off'  # Keep track of the last status
         self.override = False
         self.gate_prefs = self.preferences.get('gate_prefs', [])
         self.spin_down_time = self.preferences.get('spin_down_time', 0)
@@ -32,7 +33,7 @@ class Tool:
         self.flagged = True
 
         self.i2c = i2c
-        self.styles = styles
+        self.styles_path = styles_path
         self.button = None
         self.voltage_sensor = None
         self.button_state = False  # Initialize button state
@@ -47,10 +48,15 @@ class Tool:
     def initialize_button(self, btn_config):
         if btn_config:
             try:
-                self.button = RGBLED_Button(btn_config, self.i2c, self.styles)
+                # Log the button configuration being passed
+                logger.debug(f"Button configuration for tool {self.label}: {btn_config}")
+                logger.debug(f"Button configuration type for tool {self.label}: {type(btn_config)}")
+                self.button = RGBLED_Button(btn_config, self.i2c, self.styles_path)
                 logger.info(f"Button initialized for tool {self.label}")
             except KeyError as e:
                 logger.error(f"Configuration error: missing key {e} in button configuration for {self.label}")
+            except TypeError as e:
+                logger.error(f"Type error: {e} in button configuration for {self.label}")
             except Exception as e:
                 logger.error(f"Unexpected error initializing button for tool {self.label}: {e}")
 
@@ -62,7 +68,7 @@ class Tool:
             except KeyError as e:
                 logger.error(f"Configuration error: missing key {e} in voltage sensor configuration for {self.label}")
             except Exception as e:
-                logger.error(f"Unexpected error initializing voltage sensor for tool {self.label}: {e}")
+                logger.error(f"Unexpected error initializing voltage sensor for {self.label}: {e}")
 
     def check_button(self):
         if self.button:
@@ -72,7 +78,9 @@ class Tool:
         if self.voltage_sensor:
             is_on = self.voltage_sensor.am_i_on()
             status = "ON" if is_on else "OFF"
-            logger.info(f"{self.label} is {status}")
+            if status != self.last_status:
+                logger.info(f"{self.label} is {status}")
+                self.last_status = status
 
 # Example usage
 if __name__ == "__main__":
@@ -84,10 +92,8 @@ if __name__ == "__main__":
         config = json.load(f)
     
     styles_file = os.path.join(parent_dir, 'styles.json')
-    style_manager = Style_Manager(styles_file)
-    styles = style_manager.get_styles()
-    
-    tools = [Tool(tool, i2c, styles) for tool in config['devices'] if tool['type'] == 'tool']
+
+    tools = [Tool(tool, i2c, styles_file) for tool in config['devices'] if tool['type'] == 'tool']
     try:
         while True:
             for tool in tools:

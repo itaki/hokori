@@ -14,7 +14,7 @@ class RGBLED_Button:
         self.label = btn_config.get('label', 'unknown')
         self.physical_location = btn_config.get('physical_location', 'unknown')
         self.connection = btn_config.get('connection', {})
-        
+
         self.i2c = i2c
         self.styles = Style_Manager(styles_path).get_styles()
         
@@ -25,6 +25,10 @@ class RGBLED_Button:
         self.led_type = None
         self.button_state = False  # False = off, True = on
         self.last_button_read = True  # Assume unpressed state is high
+
+        # Log detailed configuration
+        logger.debug(f"Button config: {btn_config}")
+        logger.debug(f"Button connection: {self.connection}")
 
         # Initialize button and LED
         self.initialize_button()
