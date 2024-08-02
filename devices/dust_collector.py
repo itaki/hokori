@@ -1,53 +1,64 @@
 import time
 import logging
-from adafruit_mcp230xx.mcp23017 import MCP23017
-from digitalio import DigitalInOut, Direction
+import adafruit_mcp230xx.mcp23017 as MCP
+import board
+import busio
 
 logger = logging.getLogger(__name__)
 
 class Dust_Collector:
     def __init__(self, config, i2c):
-        self.label = config['label']
-        self.id = config['id']
-        self.preferences = config['preferences']
-        self.relay_config = config['relay']
-        self.minimum_up_time = self.preferences.get('minimum_up_time', 30)  # Default minimum up-time to 30 seconds
-        self.status = 'off'
-        self.spin_up_time = 0
+        self.id = config.get('id', 'unknown')
+        self.label = config.get('label', 'unknown')
+        self.preferences = config.get('preferences', {})
+        self.spin_up_delay = self.preferences.get('spin_up_delay', 10)
+        self.minimum_up_time = self.preferences.get('minimum_up_time', 10)
+        self.cool_down_time = self.preferences.get('cool_down_time', 30)
+        self.relay_config = config.get('relay', {})
         self.i2c = i2c
-        self.initialize_relay()
-        self.turn_off()  # Ensure the dust collector is off when initialized
-
-    def initialize_relay(self):
-        try:
-            address = int(self.relay_config['connection']['address'], 16)
-            pin = self.relay_config['connection']['pin']
-            self.mcp = MCP23017(self.i2c, address=address)
-            self.relay = self.mcp.get_pin(pin)
-            self.relay.direction = Direction.OUTPUT
-            logger.info(f"Dust collector relay {self.label} initialized at address {hex(address)} on pin {pin}")
-        except Exception as e:
-            logger.error(f"Error initializing dust collector relay {self.label}: {e}")
-
-    def turn_on(self):
-        self.relay.value = True
-        self.status = 'on'
-        self.spin_up_time = time.time()
-        logger.info(f"Dust collector {self.label} turned on")
-
-    def turn_off(self):
-        self.relay.value = False
+        self.mcp = None
+        self.relay_pin = None
         self.status = 'off'
-        logger.info(f"Dust collector {self.label} turned off")
+        self.last_turned_on_time = None
+        self.setup_relay()
+
+    def setup_relay(self):
+        relay_conn = self.relay_config.get('connection', {})
+        address = int(relay_conn.get('address', '0x20'), 16)
+        pin_number = relay_conn.get('pin', 2)
+        
+        self.mcp = MCP.MCP23017(self.i2c, address=address)
+        self.relay_pin = self.mcp.get_pin(pin_number)
+        self.relay_pin.switch_to_output(value=False)
+        logger.debug(f"Relay pin {pin_number} at address {address} set up for dust collector {self.label}")
 
     def manage_collector(self, tools):
-        current_time = time.time()
-        active_tools = [tool for tool in tools if tool.status == 'on' and tool.preferences.get('use_collector', False)]
-
-        if active_tools:
-            if self.status == 'off':
-                self.turn_on()
+        any_tool_on = any(tool.status == 'on' for tool in tools)
+        if any_tool_on:
+            self.turn_on()
         else:
-            up_time_elapsed = current_time - self.spin_up_time
-            if self.status == 'on' and up_time_elapsed >= self.minimum_up_time:
-                self.turn_off()
+            self.turn_off()
+
+    def turn_on(self):
+        if self.status != 'on':
+            self.status = 'on'
+            self.last_turned_on_time = time.time()
+            logger.info(f"Dust collector {self.label} turned on.")
+            if self.relay_pin:
+                self.relay_pin.value = True
+                logger.debug(f"Relay pin activated for dust collector {self.label}")
+
+    def turn_off(self):
+        if self.status == 'on':
+            elapsed_time = time.time() - self.last_turned_on_time
+            if elapsed_time >= self.minimum_up_time:
+                self.status = 'off'
+                logger.info(f"Dust collector {self.label} turned off.")
+                if self.relay_pin:
+                    self.relay_pin.value = False
+                    logger.debug(f"Relay pin deactivated for dust collector {self.label}")
+
+    def cleanup(self):
+        if self.relay_pin:
+            self.relay_pin.value = False
+            logger.debug(f"Cleaned up relay pin for dust collector {self.label}")
