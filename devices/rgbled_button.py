@@ -48,7 +48,7 @@ class RGBLED_Button:
     def initialize_led(self, led_config):
         if led_config:
             try:
-                logger.info(f"Creating {self.label} LED at address {led_config['connection']['address']} on pins {led_config['connection']['pins']}")
+                logger.debug(f"Creating {self.label} LED at address {led_config['connection']['address']} on pins {led_config['connection']['pins']}")
                 address = int(led_config['connection']['address'], 16)
                 self.pca = PCA9685(self.i2c, address=address)
                 self.pca.frequency = 1000
@@ -59,7 +59,7 @@ class RGBLED_Button:
                     self.led_blue = self.pca.channels[led_config['connection']['pins'][2]]
                     self.led_type = "RGB"
                     self.set_led_color(self.styles["RGBLED_button_styles"]["RGBLED_off_color"])  # Initialize LED to off state
-                    logger.info(f"Created RGBLED on {led_config['connection']['pins']}")
+                    logger.debug(f"Created RGBLED on {led_config['connection']['pins']}")
                 else:
                     logger.warning(f"LED type {led_config['type']} not supported")
             except KeyError as e:
@@ -79,7 +79,7 @@ class RGBLED_Button:
             if self.last_button_read and not current_read:
                 self.button_state = not self.button_state
                 state_str = "off" if not self.button_state else "on"
-                logger.info(f"Button is now {state_str} on tool {self.label}")
+                logger.debug(f"Button is now {state_str} on tool {self.label}")
                 self.update_led(state_str)
             self.last_button_read = current_read
 

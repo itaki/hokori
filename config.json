@@ -34,7 +34,7 @@
                 "use_collector": true,
                 "gate_prefs": ["HOSE"],
                 "last_used": 0,
-                "spin_down_time": 0
+                "spin_down_time": 5
             },
             "button": {
                 "label": "Hose Button",
@@ -66,8 +66,9 @@
             "label": "Main Collector",
             "id": "main-collector",
             "preferences": {
-                "last_used": 0,
-                "min_spin_down_time": 10
+                "spin_up_delay": 10,
+                "minimum_up_time": 10,
+                "cool_down_time": 30
             },
             "relay": {
                 "label": "Main Collector Relay",

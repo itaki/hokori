@@ -45,7 +45,7 @@ class Voltage_Sensor:
         try:
             self.ads = ADS1115(self.i2c, address=self.board_address)
             self.chan = AnalogIn(self.ads, self.pin)
-            logger.info(f"Voltage sensor {self.label} initialized at address {hex(self.board_address)} on pin {self.pin}")
+            logger.debug(f"Voltage sensor {self.label} initialized at address {hex(self.board_address)} on pin {self.pin}")
         except Exception as e:
             logger.error(f"Error initializing voltage sensor {self.label}: {e}")
 
@@ -67,7 +67,7 @@ class Voltage_Sensor:
         initial_std_dev = self.calculate_std_dev()
         self.std_dev_threshold = initial_std_dev * self.multiplier
         self.trigger = max(self.readings) * TRIGGER_THRESHOLD
-        logger.info(f"Initialized std_dev_threshold for {self.label}: {self.std_dev_threshold}")
+        logger.debug(f"Initialized std_dev_threshold for {self.label}: {self.std_dev_threshold}")
 
     def monitor_voltage(self):
         while not self.stop_event.is_set():
@@ -87,7 +87,7 @@ class Voltage_Sensor:
             self.status = 'off'
 
         if self.status != self.last_status:
-            logger.info(f"Tool {self.label} - Method: Sensor - Status: {self.status}")
+            logger.debug(f" {self.label} Voltage Sensor: {self.status}")
             self.last_status = self.status
 
     def am_i_on(self):

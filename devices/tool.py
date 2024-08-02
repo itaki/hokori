@@ -47,7 +47,7 @@ class Tool:
         if btn_config:
             try:
                 self.button = RGBLED_Button(btn_config, self.i2c, self.styles_path)
-                logger.info(f"Button initialized for tool {self.label}")
+                logger.debug(f"Button initialized for tool {self.label}")
             except KeyError as e:
                 logger.error(f"Configuration error: missing key {e} in button configuration for {self.label}")
             except TypeError as e:
@@ -59,7 +59,7 @@ class Tool:
         if volt_config:
             try:
                 self.voltage_sensor = Voltage_Sensor(volt_config, self.i2c)
-                logger.info(f"Voltage sensor initialized for tool {self.label}")
+                logger.debug(f"Voltage sensor initialized for tool {self.label}")
             except KeyError as e:
                 logger.error(f"Configuration error: missing key {e} in voltage sensor configuration for {self.label}")
             except Exception as e:
@@ -83,7 +83,7 @@ class Tool:
     def set_status(self, status):
         if self.status != status:
             self.status = status
-            logger.info(f"Tool {self.label} status changed to {self.status}")
+            #logger.debug(f"Tool {self.label} status changed to {self.status}")
 
 # Example usage
 if __name__ == "__main__":

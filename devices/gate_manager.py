@@ -40,31 +40,51 @@ class Gate:
         self.min = gate_info['min']
         self.max = gate_info['max']
         self.status = gate_info['status']
-        self.previous_status = None  # Track previous status for logging
+        self.previous_status = gate_info['status']  # Initialize with the current status
+        self.servo_kit = ServoKit(channels=16, address=self.address)
+        self.servo = self.servo_kit.servo[self.pin]
         self.init_servo()
 
     def init_servo(self):
         try:
-            self.servo = ServoKit(channels=16, address=self.address).servo[self.pin]
+            self.servo.set_pulse_width_range(1000, 2000)  # Set default pulse width range
             return True
         except Exception as e:
             logger.debug(f"FAILED to create gate at address {self.address} on pin {self.pin}: {e}")
             return False
 
+    def start_pwm(self):
+        # You can implement any specific initialization needed for your servo here
+        pass
+
+    def stop_pwm(self):
+        # Set the servo to a neutral or low-power state
+        self.servo.fraction = None  # This should turn off the PWM signal
+
     def open(self):
-        self.servo.angle = self.max
-        self.update_status("open")
+        if self.status != "open":
+            self.start_pwm()
+            self.servo.angle = self.max
+            time.sleep(0.5)  # Allow time for the servo to move
+            self.stop_pwm()
+            self.update_status("open")
     
     def close(self):
-        self.servo.angle = self.min
-        self.update_status("closed")
+        if self.status != "closed":
+            self.start_pwm()
+            self.servo.angle = self.min
+            time.sleep(0.5)  # Allow time for the servo to move
+            self.stop_pwm()
+            self.update_status("closed")
     
     def update_status(self, new_status):
         if self.previous_status != new_status:
             self.previous_status = new_status
+            self.status = new_status
             logger.info(f"Gate {self.name} {new_status}.")
     
     def identify(self):
+        self.start_pwm()
         i = 0
         while i < 20:
             self.servo.angle = 80
@@ -76,6 +96,7 @@ class Gate:
             self.open()
         else:
             self.close()
+        self.stop_pwm()
 
 class Gate_Manager:
     def __init__(self, gates_file=GATES_FILE, backup_dir=BACKUP_DIR):
@@ -85,6 +106,7 @@ class Gate_Manager:
         self.gates_dict = self.load_gates()
         if self.gates_dict:
             self.build_gates()
+            self.close_all_gates()  # Close all gates on initialization
 
     def load_gates(self):
         '''Loads gates from a JSON file'''
