@@ -17,11 +17,13 @@ class Device_Manager:
         self.devices = self.get_devices(device_file)
         self.hubs = self.create_hubs(self.devices)
         self.tools = self.create_tools(self.devices)
+        logger.debug("Device_Manager initialized.")
 
     def get_devices(self, file):
         if os.path.exists(file):
             with open(file, 'r') as f:
                 config = json.load(f)
+            logger.debug(f"Loaded devices from {file}")
             return config['devices']
         else:
             raise FileNotFoundError(f"Device configuration file '{file}' not found.")
@@ -33,6 +35,7 @@ class Device_Manager:
                 hub_id = device['id']
                 try:
                     hubs[hub_id] = Hub(device, self.i2c)
+                    logger.debug(f"Initialized hub {hub_id}")
                 except Exception as e:
                     logger.error(f"Error initializing hub {hub_id}: {e}")
         return hubs
@@ -44,6 +47,7 @@ class Device_Manager:
                 tool_id = device['id']
                 try:
                     tools[tool_id] = Tool(device, self.i2c, self.styles_path)
+                    logger.debug(f"Initialized tool {tool_id}")
                 except Exception as e:
                     logger.error(f"Error initializing tool {tool_id}: {e}")
         return tools

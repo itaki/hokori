@@ -18,7 +18,6 @@ logging.basicConfig(level=logging.DEBUG)  # Set logging to DEBUG level for detai
 logger = logging.getLogger(__name__)
 
 def main():
-    dust_collector = None
     try:
         # Initialize I2C
         i2c = busio.I2C(board.SCL, board.SDA)
@@ -69,7 +68,7 @@ def main():
 
             # Manage dust collector
             if dust_collector:
-                #logger.debug(f"Managing dust collector for {len(tools)} tools.")
+                logger.debug(f"Managing dust collector for {len(tools)} tools.")
                 dust_collector.manage_collector(tools)
 
             time.sleep(0.1)  # Small delay to avoid busy waiting
@@ -88,7 +87,6 @@ def main():
     finally:
         if dust_collector:
             dust_collector.turn_off()
-            dust_collector.cleanup()
         logger.info("Clean shutdown complete.")
 
 if __name__ == "__main__":

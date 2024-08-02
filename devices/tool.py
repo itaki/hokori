@@ -48,13 +48,13 @@ class Tool:
         if btn_config:
             try:
                 self.button = RGBLED_Button(btn_config, self.i2c, self.styles_path)
-                logger.debug(f"Button initialized for tool {self.label}")
+                logger.debug(f"Tool button initialized for tool {self.label}")
             except KeyError as e:
-                logger.error(f"Configuration error: missing key {e} in button configuration for {self.label}")
+                logger.error(f"Configuration error: missing key {e} in tool button configuration for {self.label}")
             except TypeError as e:
-                logger.error(f"Type error: {e} in button configuration for {self.label}")
+                logger.error(f"Type error: {e} in tool button configuration for {self.label}")
             except Exception as e:
-                logger.error(f"Unexpected error initializing button for tool {self.label}: {e}")
+                logger.error(f"Unexpected error initializing tool button for {self.label}: {e}")
 
     def initialize_voltage_sensor(self, volt_config):
         if volt_config:
@@ -76,15 +76,16 @@ class Tool:
                     'last_state': False  # Debounce state
                 }
                 self.modifiers.append(modifier)
-                logger.debug(f"Modifier {mod_config['label']} initialized for tool {self.label}")
+                logger.debug(f"Modifier button {mod_config['label']} initialized for tool {self.label}")
             except KeyError as e:
-                logger.error(f"Configuration error: missing key {e} in modifier configuration for {self.label}")
+                logger.error(f"Configuration error: missing key {e} in modifier button configuration for {self.label}")
             except Exception as e:
-                logger.error(f"Unexpected error initializing modifier for tool {self.label}: {e}")
+                logger.error(f"Unexpected error initializing modifier button for tool {self.label}: {e}")
 
     def check_button(self):
         if self.button:
             self.button.check_button()
+            #logger.debug(f"Tool button state for tool {self.label}: {self.button.button_state}")
             if self.button.button_state:
                 self.set_status('on')
             else:
@@ -102,13 +103,16 @@ class Tool:
             button = modifier['button']
             button.check_button()
             current_state = button.button_state
+            
 
-            if current_state and not modifier['last_state']:
-                self.gate_prefs.update(modifier['preferences']['gate_prefs'])
-                logger.debug(f"Added gates {modifier['preferences']['gate_prefs']} for tool {self.label}")
-            elif not current_state and modifier['last_state']:
-                self.gate_prefs.difference_update(modifier['preferences']['gate_prefs'])
-                logger.debug(f"Removed gates {modifier['preferences']['gate_prefs']} for tool {self.label}")
+            if current_state != modifier['last_state']:
+                logger.debug(f"Modifier button state for {modifier['preferences']['modifications']}: {current_state}")
+                if current_state:
+                    self.gate_prefs.update(modifier['preferences']['gate_prefs'])
+                    logger.debug(f"Added gates {modifier['preferences']['gate_prefs']} for tool {self.label}")
+                else:
+                    self.gate_prefs.difference_update(modifier['preferences']['gate_prefs'])
+                    logger.debug(f"Removed gates {modifier['preferences']['gate_prefs']} for tool {self.label}")
             
             modifier['last_state'] = current_state  # Update last state
 
