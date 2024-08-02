@@ -45,7 +45,7 @@ def main():
         running = True
         last_active_tool = None  # Track the last active tool
         
-        # Main loop to check for button presses and voltage
+        # Main loop to check for button presses, voltage, and modifiers
         while running:
             active_gates = set()
             any_tool_active = False  # Flag to track if any tool is active
@@ -53,6 +53,7 @@ def main():
             for tool in tools:
                 tool.check_button()
                 tool.check_voltage()
+                tool.check_modifiers()  # Ensure modifiers are checked
                 if tool.status == 'on':
                     any_tool_active = True
                     active_gates.update(tool.gate_prefs)
