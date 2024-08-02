@@ -1,7 +1,7 @@
 import time
 import board
 import busio
-import adafruit_mcp230xx
+import adafruit_mcp230xx.mcp23017 as MCP
 import logging
 
 # Set up logging
@@ -14,7 +14,7 @@ PIN = 2  # Pin 2 on the MCP23017
 
 def setup_mcp():
     i2c = busio.I2C(board.SCL, board.SDA)
-    mcp = adafruit_mcp230xx.MCP23017(i2c, address=MCP23017_ADDRESS)
+    mcp = MCP.MCP23017(i2c, address=MCP23017_ADDRESS)
     pin = mcp.get_pin(PIN)
     pin.switch_to_output(value=False)
     logger.debug(f"MCP23017 at address {MCP23017_ADDRESS} set up. Pin {PIN} configured as output.")
