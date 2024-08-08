@@ -11,7 +11,6 @@ sys.path.append(parent_dir)
 
 from utils.style_manager import Style_Manager
 
-
 logger = logging.getLogger(__name__)
 
 class RGBLED_Button:
@@ -153,7 +152,7 @@ if __name__ == "__main__":
     # Initialize RGBLED_Buttons
     rgbled_buttons = {}
     for config in button_configs:
-        rgbled_buttons[config['label']] = RGBLED_Button(config, i2c, os.path.join(parent_dir, 'styles.json'))
+        rgbled_buttons[config['label']] = RGBLED_Button(config, i2c, os.path.join(os.path.dirname(__file__), 'styles.json'))
 
     # Start button polling in the background
     button_manager.start()

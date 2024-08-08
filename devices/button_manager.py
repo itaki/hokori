@@ -37,6 +37,10 @@ class Button_Manager:
                 if not button.value:  # Button press detected
                     logger.debug(f"Button {label} pressed")
                     print(f"Button {label} pressed")
+                    # Notify the RGBLED_Button instance
+                    for btn in self.buttons:
+                        if btn[0] == label:
+                            btn[1].update_led(True)
                     time.sleep(0.5)  # Debounce delay
             time.sleep(0.1)  # Small delay to avoid busy-waiting
 
@@ -52,3 +56,6 @@ class Button_Manager:
             self.running = False
             self.thread.join()
             logger.debug("Stopped button polling thread")
+
+    def register_button(self, button):
+        self.buttons.append(button)
