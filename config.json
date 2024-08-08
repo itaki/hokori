@@ -94,7 +94,29 @@
                 "last_used": 0,
                 "spin_down_time": 10
             },
-            "button": {},
+            "button": {
+                "type": "RGBLED_Button",
+                "label": "Miter Saw Button",
+                "id": "miter_button",
+                "physical_location": "By the miter saw",
+                "status": "off",
+                "connection": {
+                    "hub": "main-hub",
+                    "address": "0x20",
+                    "pin": 5
+                },
+                "led": {
+                    "label": "Hose LED",
+                    "id": "hose_button_LED",
+                    "type": "RGBLED",
+                    "physical_location": "On the Hose Button",
+                    "connection": {
+                        "hub": "main-hub",
+                        "address": "0x40",
+                        "pins": [9, 10, 11]
+                    }
+                }
+            },
             "led": {},
             "volt": {
                 "label": "VS for miter saw",
@@ -110,33 +132,56 @@
             "keyboard_key": 50,
             "modifiers": [
                 {
-                    "label": "Miter Saw Button",
-                    "id": "miter_saw_button",
+                    "type": "RGBLED_Button",
+                    "label": "LEFT Miter Saw Button",
+                    "id": "left_miter_saw_button",
+                    "physical_location": "Above the miter saw",
                     "preferences": {
                         "modifications": ["gates"],
-                        "gate_prefs": ["MiterSaw_Gate"]
+                        "gate_prefs": ["MiterSaw_Left_Gate"]
                     },
-                    "button": {
-                        "label": "MiterSaw Button",
-                        "id": "miter_saw_button",
-                        "type": "RGBLED_Button",
-                        "physical_location": "Above the miter saw",
-                        "connection": {
-                            "hub": "main-hub",
-                            "address": "0x20",
-                            "pin": 1
-                        },
-                        "status": "off"
+                    "status": "off",
+                    "connection": {
+                        "hub": "main-hub",
+                        "address": "0x20",
+                        "pin": 1
                     },
                     "led": {
                         "label": "Miter Saw Button LED",
-                        "id": "miter_saw_button_LED",
+                        "id": "left_miter_saw_button_LED",
                         "type": "RGBLED",
                         "physical_location": "above the miter saw",
                         "connection": {
                             "hub": "main-hub",
                             "address": "0x40",
                             "pins": [3, 4, 5]
+                        }
+                    }
+                },
+                {
+                    "type": "RGBLED_Button",
+                    "label": "RIGHT Miter Saw Button",
+                    "id": "right_miter_saw_button",
+                    "physical_location": "Above the miter saw",
+                    "preferences": {
+                        "modifications": ["gates"],
+                        "gate_prefs": ["MiterSaw_Right_Gate"]
+                    },
+                    "status": "off",
+                    "connection": {
+                        "hub": "main-hub",
+                        "address": "0x20",
+                        "pin": 3
+                    },
+                    "led": {
+                        "label": "Miter Saw Button LED",
+                        "id": "right_miter_saw_button_LED",
+                        "type": "RGBLED",
+                        "physical_location": "above the miter saw",
+                        "connection": {
+                            "hub": "main-hub",
+                            "address": "0x40",
+                            "pins": [6, 7, 8]
                         }
                     }
                 }
