@@ -7,6 +7,7 @@ import json
 from devices.tool import Tool
 from devices.gate_manager import Gate_Manager
 from devices.dust_collector import Dust_Collector
+from devices.hub import Hub
 
 # Constants for configuration files and backup directory
 DEVICE_FILE = 'config.json'
@@ -31,7 +32,10 @@ def main():
         with open(config_file, 'r') as f:
             config = json.load(f)
         
-        tools = [Tool(tool, i2c, styles_path) for tool in config['devices'] if tool['type'] == 'tool']
+        hubs = [Hub(hub, i2c) for hub in config['hubs']]
+        logger.info(f"Initialized {len(hubs)} hubs.")
+
+        tools = [Tool(tool, i2c, styles_path) for tool in config['tools'] if tool['type'] == 'tool']
         logger.info(f"Initialized {len(tools)} tools.")
         
         # Initialize Gate Manager
@@ -39,7 +43,7 @@ def main():
         logger.info(f"Gate initialization complete.")
         
         # Initialize Dust Collector
-        dust_collector_config = next((device for device in config['devices'] if device['type'] == 'dust_collector'), None)
+        dust_collector_config = next((device for device in config['tools'] if device['type'] == 'dust_collector'), None)
         dust_collector = Dust_Collector(dust_collector_config, i2c) if dust_collector_config else None
         if dust_collector:
             logger.info(f"Dust collector {dust_collector.label} initialized.")
@@ -69,7 +73,6 @@ def main():
 
             # Manage dust collector
             if dust_collector:
-                #logger.debug(f"Managing dust collector for {len(tools)} tools.")
                 dust_collector.manage_collector(tools)
 
             time.sleep(0.1)  # Small delay to avoid busy waiting

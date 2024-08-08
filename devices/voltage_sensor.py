@@ -96,3 +96,30 @@ class Voltage_Sensor:
     def stop(self):
         self.stop_event.set()
         self.thread.join()
+
+# Example usage
+if __name__ == "__main__":
+    # Example config for testing
+    volt_config = {
+        "label": "VS for test",
+        "version": "20 amp",
+        "voltage_address": {
+            "board_address": "0x49",
+            "pin": 0
+        },
+        "multiplier": 3
+    }
+
+    i2c = busio.I2C(board.SCL, board.SDA)
+
+    # Create an instance of Voltage_Sensor
+    voltage_sensor = Voltage_Sensor(volt_config, i2c)
+
+    try:
+        while True:
+            status = voltage_sensor.am_i_on()
+            logger.debug(f"Voltage Sensor status is {status}")
+            time.sleep(1)
+    except KeyboardInterrupt:
+        voltage_sensor.stop()
+        logger.info("Test interrupted by user")

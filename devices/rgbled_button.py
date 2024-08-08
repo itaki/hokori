@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import threading
 
 # Add the parent directory of the current file to the system path
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -34,6 +35,8 @@ class RGBLED_Button:
         self.led_type = None
         self.button_state = False  # False = off, True = on
         self.last_button_read = True  # Assume unpressed state is high
+        self.running = False
+        self.thread = None
 
         # Initialize button and LED
         self.initialize_button()
@@ -82,17 +85,28 @@ class RGBLED_Button:
             self.led_blue.duty_cycle = 0xFFFF - color["blue"]
 
     def check_button(self):
-        if self.button is not None:
-            current_read = self.button.value
-            #logger.debug(f"Button read: {current_read}, Last read: {self.last_button_read}")
-            if self.last_button_read and not current_read:  # Detect button press (transition from high to low)
-                logger.debug(f"Button press detected for {self.label}")
-                time.sleep(0.05)  # Small delay to debounce
-                if not self.button.value:  # Confirm the button is still pressed
-                    self.button_state = not self.button_state  # Toggle button state
-                    logger.debug(f"Button state toggled to: {self.button_state} on tool {self.label}")
-                    self.update_led(self.button_state)
-            self.last_button_read = current_read
+        while self.running:
+            if self.button is not None:
+                current_read = self.button.value
+                if self.last_button_read and not current_read:  # Detect button press (transition from high to low)
+                    logger.debug(f"Button press detected for {self.label}")
+                    time.sleep(0.05)  # Small delay to debounce
+                    if not self.button.value:  # Confirm the button is still pressed
+                        self.button_state = not self.button_state  # Toggle button state
+                        logger.debug(f"Button state toggled to: {self.button_state} on tool {self.label}")
+                        self.update_led(self.button_state)
+                self.last_button_read = current_read
+            time.sleep(0.1)  # Small delay to avoid busy-waiting
+
+    def start(self):
+        self.running = True
+        self.thread = threading.Thread(target=self.check_button)
+        self.thread.start()
+
+    def stop(self):
+        self.running = False
+        if self.thread is not None:
+            self.thread.join()
 
     def get_button_state(self):
         return self.button_state
@@ -138,8 +152,11 @@ if __name__ == "__main__":
     button = RGBLED_Button(button_config, i2c, 'path/to/styles.json')
 
     try:
+        button.start()  # Start the button thread
         while True:
-            button.check_button()
-            time.sleep(0.1)  # Small delay to avoid busy-waiting
+            time.sleep(1)
+            state = button.get_button_state()
+            logger.debug(f"Button state is {state}")
     except KeyboardInterrupt:
+        button.stop()
         logger.info("Test interrupted by user")
