@@ -1,3 +1,12 @@
+import os
+import sys
+import time
+
+# Add the parent directory of the current file to the system path
+base_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(base_dir)
+sys.path.append(parent_dir)
+
 import board
 import busio
 import logging
@@ -38,8 +47,7 @@ class RGBLED_Button:
             self.button = self.mcp.get_pin(pin)
             self.button.direction = Direction.INPUT
             self.button.pull = Pull.UP
-            # Comment out these debug statements
-            # logger.debug(f"Initial button value for {self.label}: {self.button.value}")
+            logger.debug(f"Button initialized at address {address}, pin {pin}")
         except KeyError as e:
             logger.error(f"Configuration error: missing key {e} in button configuration for {self.label}")
         except Exception as e:
@@ -76,16 +84,62 @@ class RGBLED_Button:
     def check_button(self):
         if self.button is not None:
             current_read = self.button.value
-            if self.last_button_read and not current_read:
-                self.button_state = not self.button_state
-                state_str = "off" if not self.button_state else "on"
-                logger.debug(f"Button is now {state_str} on tool {self.label}")
-                self.update_led(state_str)
+            #logger.debug(f"Button read: {current_read}, Last read: {self.last_button_read}")
+            if self.last_button_read and not current_read:  # Detect button press (transition from high to low)
+                logger.debug(f"Button press detected for {self.label}")
+                time.sleep(0.05)  # Small delay to debounce
+                if not self.button.value:  # Confirm the button is still pressed
+                    self.button_state = not self.button_state  # Toggle button state
+                    logger.debug(f"Button state toggled to: {self.button_state} on tool {self.label}")
+                    self.update_led(self.button_state)
             self.last_button_read = current_read
 
-    def update_led(self, status):
+    def get_button_state(self):
+        return self.button_state
+
+    def update_led(self, state):
         if self.led_type == "RGB":
-            if status == 'on':
+            if state:
                 self.set_led_color(self.styles["RGBLED_button_styles"]["RGBLED_on_color"])  # Set LED to on color
-            elif status == 'off':
+            else:
                 self.set_led_color(self.styles["RGBLED_button_styles"]["RGBLED_off_color"])  # Set LED to off color
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+
+    # Example button configuration for testing
+    button_config = {
+        "type": "RGBLED_Button",
+        "label": "Test Button",
+        "id": "test_button",
+        "physical_location": "Test Location",
+        "status": "off",
+        "connection": {
+            "hub": "main-hub",
+            "address": "0x20",
+            "pin": 0
+        },
+        "led": {
+            "label": "Test Button LED",
+            "id": "test_button_led",
+            "type": "RGBLED",
+            "physical_location": "Test Location",
+            "connection": {
+                "hub": "main-hub",
+                "address": "0x40",
+                "pins": [0, 1, 2]
+            }
+        }
+    }
+
+    i2c = busio.I2C(board.SCL, board.SDA)
+
+    # Create an instance of RGBLED_Button
+    button = RGBLED_Button(button_config, i2c, 'path/to/styles.json')
+
+    try:
+        while True:
+            button.check_button()
+            time.sleep(0.1)  # Small delay to avoid busy-waiting
+    except KeyboardInterrupt:
+        logger.info("Test interrupted by user")

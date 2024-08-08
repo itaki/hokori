@@ -12,7 +12,6 @@ parent_dir = os.path.dirname(base_dir)
 sys.path.append(parent_dir)
 
 from devices.rgbled_button import RGBLED_Button  # Import for button
-from devices.voltage_sensor import Voltage_Sensor  # Import for voltage sensor
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -33,12 +32,11 @@ class Tool:
         self.i2c = i2c
         self.styles_path = styles_path
         self.button = None
-        self.voltage_sensor = None
+        self.button_state = False  # Initialize button state
 
-        # Initialize components
+        # Initialize button
         try:
             self.initialize_button(tool_config.get('button', {}))
-            self.initialize_voltage_sensor(tool_config.get('volt', {}))
         except Exception as e:
             logger.error(f"Unexpected error initializing tool {self.label}: {e}")
 
@@ -56,30 +54,15 @@ class Tool:
             except Exception as e:
                 logger.error(f"Unexpected error initializing tool button for {self.label}: {e}")
 
-    def initialize_voltage_sensor(self, volt_config):
-        if volt_config:
-            try:
-                self.voltage_sensor = Voltage_Sensor(volt_config, self.i2c)
-                logger.debug(f"Voltage sensor initialized for tool {self.label}")
-            except KeyError as e:
-                logger.error(f"Configuration error: missing key {e} in voltage sensor configuration for {self.label}")
-            except Exception as e:
-                logger.error(f"Unexpected error initializing voltage sensor for tool {self.label}: {e}")
-
-    def check_status(self):
+    def check_button(self):
         if self.button:
-            #logger.debug(f"Checking button for tool {self.label}")
             self.button.check_button()
-            if self.button.get_button_state():
-                self.set_status('on')
-            else:
-                self.set_status('off')
-
-        if self.voltage_sensor:
-            if self.voltage_sensor.am_i_on():
-                self.set_status('on')
-            else:
-                self.set_status('off')
+            if self.button.button_state != self.button_state:
+                self.button_state = self.button.button_state
+                state_str = "off" if not self.button_state else "on"
+                logger.debug(f"Button is now {state_str} on tool {self.label}")
+                self.set_status(state_str)
+                self.button.update_led(state_str)
 
     def set_status(self, status):
         if self.status != status:
@@ -101,7 +84,7 @@ if __name__ == "__main__":
     try:
         while True:
             for tool in tools:
-                tool.check_status()
+                tool.check_button()
             time.sleep(0.1)
     except KeyboardInterrupt:
         pass

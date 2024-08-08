@@ -29,6 +29,16 @@
             },
             "min": 30,
             "max": 150
+        },
+        "MiterSaw_Right_Gate": {
+            "physical_location": "Below the miter saw to the left",
+            "status": "closed",
+            "io_location": {
+                "address": "0x42",
+                "pin": 3
+            },
+            "min": 30,
+            "max": 150
         }
     }
 }
