@@ -47,7 +47,7 @@ class Tool:
     def initialize_button(self, btn_config):
         if btn_config:
             try:
-                self.button = RGBLED_Button(btn_config, self.i2c, self.styles_path)
+                self.button = RGBLED_Button(btn_config, self.i2c, self.styles_path, self.set_status)
                 logger.debug(f"Tool button initialized for tool {self.label}")
             except KeyError as e:
                 logger.error(f"Configuration error: missing key {e} in tool button configuration for {self.label}")
@@ -59,27 +59,12 @@ class Tool:
     def initialize_voltage_sensor(self, volt_config):
         if volt_config:
             try:
-                self.voltage_sensor = Voltage_Sensor(volt_config, self.i2c)
+                self.voltage_sensor = Voltage_Sensor(volt_config, self.i2c, self.set_status)
                 logger.debug(f"Voltage sensor initialized for tool {self.label}")
             except KeyError as e:
                 logger.error(f"Configuration error: missing key {e} in voltage sensor configuration for {self.label}")
             except Exception as e:
                 logger.error(f"Unexpected error initializing voltage sensor for tool {self.label}: {e}")
-
-    def check_status(self):
-        if self.button:
-            #logger.debug(f"Checking button for tool {self.label}")
-            self.button.check_button()
-            if self.button.get_button_state():
-                self.set_status('on')
-            else:
-                self.set_status('off')
-
-        if self.voltage_sensor:
-            if self.voltage_sensor.am_i_on():
-                self.set_status('on')
-            else:
-                self.set_status('off')
 
     def set_status(self, status):
         if self.status != status:
@@ -97,11 +82,9 @@ if __name__ == "__main__":
 
     styles_file = os.path.join(parent_dir, 'styles.json')
 
-    tools = [Tool(tool, i2c, styles_file) for tool in config['devices'] if tool['type'] == 'tool']
+    tools = [Tool(tool, i2c, styles_file) for tool in config['tools']]
     try:
         while True:
-            for tool in tools:
-                tool.check_status()
             time.sleep(0.1)
     except KeyboardInterrupt:
         pass

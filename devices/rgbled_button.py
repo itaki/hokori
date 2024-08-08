@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import json
 
 # Add the parent directory of the current file to the system path
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -18,7 +19,7 @@ from utils.style_manager import Style_Manager
 logger = logging.getLogger(__name__)
 
 class RGBLED_Button:
-    def __init__(self, btn_config, i2c, styles_path):
+    def __init__(self, btn_config, i2c, styles_path, status_callback):
         self.id = btn_config.get('id', 'unknown')
         self.label = btn_config.get('label', 'unknown')
         self.physical_location = btn_config.get('physical_location', 'unknown')
@@ -34,6 +35,7 @@ class RGBLED_Button:
         self.led_type = None
         self.button_state = False  # False = off, True = on
         self.last_button_read = True  # Assume unpressed state is high
+        self.status_callback = status_callback
 
         # Initialize button and LED
         self.initialize_button()
@@ -47,7 +49,7 @@ class RGBLED_Button:
             self.button = self.mcp.get_pin(pin)
             self.button.direction = Direction.INPUT
             self.button.pull = Pull.UP
-            logger.debug(f"Button initialized at address {address}, pin {pin}")
+            logger.debug(f"Button initialized at address {hex(address)}, pin {pin}")
         except KeyError as e:
             logger.error(f"Configuration error: missing key {e} in button configuration for {self.label}")
         except Exception as e:
@@ -92,6 +94,7 @@ class RGBLED_Button:
                     self.button_state = not self.button_state  # Toggle button state
                     logger.debug(f"Button state toggled to: {self.button_state} on tool {self.label}")
                     self.update_led(self.button_state)
+                    self.status_callback('on' if self.button_state else 'off')
             self.last_button_read = current_read
 
     def get_button_state(self):
@@ -107,39 +110,42 @@ class RGBLED_Button:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
-    # Example button configuration for testing
-    button_config = {
-        "type": "RGBLED_Button",
-        "label": "Test Button",
-        "id": "test_button",
-        "physical_location": "Test Location",
-        "status": "off",
-        "connection": {
-            "hub": "main-hub",
-            "address": "0x20",
-            "pin": 0
-        },
-        "led": {
-            "label": "Test Button LED",
-            "id": "test_button_led",
-            "type": "RGBLED",
-            "physical_location": "Test Location",
-            "connection": {
-                "hub": "main-hub",
-                "address": "0x40",
-                "pins": [0, 1, 2]
-            }
-        }
-    }
+    def set_status(status):
+        logger.debug(f"Status set to {status}")
 
     i2c = busio.I2C(board.SCL, board.SDA)
 
-    # Create an instance of RGBLED_Button
-    button = RGBLED_Button(button_config, i2c, 'path/to/styles.json')
+    # Load the configuration from the config.json file
+    config_file = os.path.join(parent_dir, 'config.json')
+    with open(config_file, 'r') as f:
+        config = json.load(f)
 
+    styles_file = os.path.join(parent_dir, 'styles.json')
+
+    # List to hold all created buttons
+    buttons = []
+
+    # Initialize all buttons from the config
+    for tool in config['tools']:
+        button_config = tool.get('button', {})
+        
+        if button_config:
+            try:
+                button = RGBLED_Button(button_config, i2c, styles_file, set_status)
+                buttons.append((tool['label'], button))
+                logger.info(f"Button created for tool: {tool['label']} at location {button_config.get('physical_location', 'Unknown')}")
+            except Exception as e:
+                logger.error(f"Failed to create button for tool {tool['label']}: {e}")
+        else:
+            logger.warning(f"No button configuration found or button is empty for tool: {tool['label']}. Skipping this tool.")
+
+    # Test all created buttons in a loop
     try:
         while True:
-            button.check_button()
+            for label, button in buttons:
+                logger.info(f"Testing button for tool: {label}")
+                button.check_button()
             time.sleep(0.1)  # Small delay to avoid busy-waiting
     except KeyboardInterrupt:
         logger.info("Test interrupted by user")
+

@@ -62,3 +62,33 @@ class Dust_Collector:
         if self.relay_pin:
             self.relay_pin.value = False
             logger.debug(f"Cleaned up relay pin for dust collector {self.label}")
+
+# Example usage
+if __name__ == "__main__":
+    import json
+    import board
+    import busio
+
+    # Load configuration
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+
+    # Initialize I2C
+    i2c = busio.I2C(board.SCL, board.SDA)
+
+    # Initialize dust collectors from config
+    dust_collectors = [Dust_Collector(dc, i2c) for dc in config['collectors']]
+
+    # Simulate tools for testing
+    class Tool:
+        def __init__(self, status):
+            self.status = status
+
+    tools = [Tool(status='on'), Tool(status='off')]
+
+    # Manage collectors based on tool status
+    for dc in dust_collectors:
+        dc.manage_collector(tools)
+        time.sleep(5)
+        dc.turn_off()
+        dc.cleanup()

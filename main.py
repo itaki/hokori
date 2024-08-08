@@ -31,7 +31,7 @@ def main():
         with open(config_file, 'r') as f:
             config = json.load(f)
         
-        tools = [Tool(tool, i2c, styles_path) for tool in config['devices'] if tool['type'] == 'tool']
+        tools = [Tool(tool, i2c, styles_path) for tool in config['tools']]
         logger.info(f"Initialized {len(tools)} tools.")
         
         # Initialize Gate Manager
@@ -39,22 +39,20 @@ def main():
         logger.info(f"Gate initialization complete.")
         
         # Initialize Dust Collector
-        dust_collector_config = next((device for device in config['devices'] if device['type'] == 'dust_collector'), None)
+        dust_collector_config = config['collectors'][0] if 'collectors' in config and config['collectors'] else None
         dust_collector = Dust_Collector(dust_collector_config, i2c) if dust_collector_config else None
         if dust_collector:
             logger.info(f"Dust collector {dust_collector.label} initialized.")
 
-        # Main loop to check for button presses, voltage, and modifier button presses
+        # Main loop to manage tool status and dust collector
         running = True
         while running:
             active_gates = set()
             any_tool_active = False  # Flag to track if any tool is active
 
             for tool in tools:
-                tool.check_button()  # Check the main tool button
-                tool.check_voltage()  # Check the voltage sensor
-                tool.check_modifiers()  # Check the modifier buttons
-                
+                # The tool's status is now managed by its components (buttons and voltage sensors)
+
                 if tool.status == 'on':
                     any_tool_active = True
                     active_gates.update(tool.gate_prefs)
@@ -69,7 +67,6 @@ def main():
 
             # Manage dust collector
             if dust_collector:
-                #logger.debug(f"Managing dust collector for {len(tools)} tools.")
                 dust_collector.manage_collector(tools)
 
             time.sleep(0.1)  # Small delay to avoid busy waiting

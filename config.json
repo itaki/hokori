@@ -2,7 +2,7 @@
     "info": [
         { "name": "Shop with 1 hub connected to a button and led" }
     ],
-    "devices": [
+    "hubs": [
         {
             "type": "hub",
             "label": "Main Hub",
@@ -24,7 +24,9 @@
                 "type": "ADS1115",
                 "i2c_address": "0x49"
             }
-        },
+        }
+    ],
+    "tools": [
         {
             "type": "tool",
             "label": "Hose",
@@ -62,9 +64,134 @@
             "keyboard_key": 0
         },
         {
+            "type": "tool",
+            "label": "Miter Saw",
+            "id": "miter_saw",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["MiterSaw_Gate"],
+                "last_used": 0,
+                "spin_down_time": 10
+            },
+            "button": {
+            },
+            "volt": {
+                "label": "VS for miter saw",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "voltage_address": {
+                    "board_address": "0x49",
+                    "pin": 0
+                },
+                "multiplier": 3
+            },
+            "keyboard_key": 50
+        },
+        {
+            "type": "tool",
+            "label": "LEFT Miter Saw Button",
+            "id": "left_miter_saw_button",
+            "status": "off",
+            "preferences": {
+                "use_collector": false,
+                "gate_prefs": ["MiterSaw_Left_Gate"]
+            },
+            "button": {
+                "type": "RGBLED_Button",
+                "label": "LEFT Miter Saw Button",
+                "id": "left_miter_saw_button",
+                "physical_location": "Above the miter saw",
+                "connection": {
+                    "hub": "main-hub",
+                    "address": "0x20",
+                    "pin": 1
+                },
+                "led": {
+                    "label": "Left Miter Saw Button LED",
+                    "id": "left_miter_saw_button_LED",
+                    "type": "RGBLED",
+                    "physical_location": "Above the miter saw",
+                    "connection": {
+                        "hub": "main-hub",
+                        "address": "0x40",
+                        "pins": [3, 4, 5]
+                    }
+                }
+            }
+        },
+        {
+            "type": "tool",
+            "label": "RIGHT Miter Saw Button",
+            "id": "right_miter_saw_button",
+            "status": "off",
+            "preferences": {
+                "use_collector": false,
+                "gate_prefs": ["MiterSaw_Right_Gate"]
+            },
+            "button": {
+                "type": "RGBLED_Button",
+                "label": "RIGHT Miter Saw Button",
+                "id": "right_miter_saw_button",
+                "physical_location": "Above the miter saw",
+                "connection": {
+                    "hub": "main-hub",
+                    "address": "0x20",
+                    "pin": 2
+                },
+                "led": {
+                    "label": "Right Miter Saw Button LED",
+                    "id": "right_miter_saw_button_LED",
+                    "type": "RGBLED",
+                    "physical_location": "Above the miter saw",
+                    "connection": {
+                        "hub": "main-hub",
+                        "address": "0x40",
+                        "pins": [6, 7, 8]
+                    }
+                }
+            }
+        },
+        {
+            "type": "tool",
+            "label": "floowSweep",
+            "id": "floor_sweep",
+            "status": "off",
+            "preferences": {
+                "use_collector": false,
+                "gate_prefs": ["MiterSaw_Right_Gate"]
+            },
+            "button": {
+                "type": "RGBLED_Button",
+                "label": "RIGHT Miter Saw Button",
+                "id": "right_miter_saw_button",
+                "physical_location": "Above the miter saw",
+                "connection": {
+                    "hub": "main-hub",
+                    "address": "0x20",
+                    "pin": 3
+                },
+                "led": {
+                    "label": "Right Miter Saw Button LED",
+                    "id": "right_miter_saw_button_LED",
+                    "type": "RGBLED",
+                    "physical_location": "Above the miter saw",
+                    "connection": {
+                        "hub": "main-hub",
+                        "address": "0x40",
+                        "pins": [9, 10, 11]
+                    }
+                }
+            }
+        }
+        
+    ],
+    "collectors": [
+        {
             "type": "dust_collector",
             "label": "Main Collector",
             "id": "main-collector",
+            "status": "off",
             "preferences": {
                 "spin_up_delay": 10,
                 "minimum_up_time": 10,
@@ -78,114 +205,9 @@
                 "connection": {
                     "hub": "main-hub",
                     "address": "0x20",
-                    "pin": 2
-                },
-                "status": "off"
+                    "pin": 7
+                }
             }
-        },
-        {
-            "type": "tool",
-            "label": "Miter Saw",
-            "id": "miter_saw",
-            "status": "off",
-            "preferences": {
-                "use_collector": true,
-                "gate_prefs": ["MiterSaw_Gate"],
-                "last_used": 0,
-                "spin_down_time": 10
-            },
-            "button": {
-                "type": "RGBLED_Button",
-                "label": "Miter Saw Button",
-                "id": "miter_button",
-                "physical_location": "By the miter saw",
-                "status": "off",
-                "connection": {
-                    "hub": "main-hub",
-                    "address": "0x20",
-                    "pin": 5
-                },
-                "led": {
-                    "label": "Hose LED",
-                    "id": "hose_button_LED",
-                    "type": "RGBLED",
-                    "physical_location": "On the Hose Button",
-                    "connection": {
-                        "hub": "main-hub",
-                        "address": "0x40",
-                        "pins": [9, 10, 11]
-                    }
-                }
-            },
-            "led": {},
-            "volt": {
-                "label": "VS for miter saw",
-                "type": "ADS1115",
-                "version": "20 amp",
-                "voltage_address": {
-                    "board_address": "0x49",
-                    "pin": 0
-                },
-                "multiplier": 3,
-                "status": "off"
-            },
-            "keyboard_key": 50,
-            "modifiers": [
-                {
-                    "type": "RGBLED_Button",
-                    "label": "LEFT Miter Saw Button",
-                    "id": "left_miter_saw_button",
-                    "physical_location": "Above the miter saw",
-                    "preferences": {
-                        "modifications": ["gates"],
-                        "gate_prefs": ["MiterSaw_Left_Gate"]
-                    },
-                    "status": "off",
-                    "connection": {
-                        "hub": "main-hub",
-                        "address": "0x20",
-                        "pin": 1
-                    },
-                    "led": {
-                        "label": "Miter Saw Button LED",
-                        "id": "left_miter_saw_button_LED",
-                        "type": "RGBLED",
-                        "physical_location": "above the miter saw",
-                        "connection": {
-                            "hub": "main-hub",
-                            "address": "0x40",
-                            "pins": [3, 4, 5]
-                        }
-                    }
-                },
-                {
-                    "type": "RGBLED_Button",
-                    "label": "RIGHT Miter Saw Button",
-                    "id": "right_miter_saw_button",
-                    "physical_location": "Above the miter saw",
-                    "preferences": {
-                        "modifications": ["gates"],
-                        "gate_prefs": ["MiterSaw_Right_Gate"]
-                    },
-                    "status": "off",
-                    "connection": {
-                        "hub": "main-hub",
-                        "address": "0x20",
-                        "pin": 3
-                    },
-                    "led": {
-                        "label": "Miter Saw Button LED",
-                        "id": "right_miter_saw_button_LED",
-                        "type": "RGBLED",
-                        "physical_location": "above the miter saw",
-                        "connection": {
-                            "hub": "main-hub",
-                            "address": "0x40",
-                            "pins": [6, 7, 8]
-                        }
-                    }
-                }
-            ]
         }
     ]
 }
