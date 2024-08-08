@@ -1,7 +1,16 @@
+import json
+import os
+import sys
 import logging
+import threading
 import time
-from rgbled_button import RGBLED_Button
-from voltage_sensor import Voltage_Sensor
+
+# Adjust the import path to include the parent directory
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(base_dir)
+
+from devices.rgbled_button import RGBLED_Button
+from devices.voltage_sensor import Voltage_Sensor
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +28,15 @@ class Tool:
         self.button = None
         self.voltage_sensor = None
 
+        logger.debug(f"Initializing tool {self.label}")
+
         if self.button_config:
+            logger.debug(f"Initializing button for {self.label}")
             self.button = RGBLED_Button(self.button_config, self.i2c, self.styles_path)
             self.button.start()
 
         if self.volt_config:
+            logger.debug(f"Initializing voltage sensor for {self.label}")
             self.voltage_sensor = Voltage_Sensor(self.volt_config, self.i2c)
 
         self.monitoring_thread = threading.Thread(target=self.update_tool_status)
@@ -54,65 +67,33 @@ class Tool:
             self.voltage_sensor.stop()
         self.monitoring_thread.join()
 
+def load_config(config_path):
+    with open(config_path, 'r') as file:
+        return json.load(file)
+
 if __name__ == "__main__":
     import board
     import busio
 
     logging.basicConfig(level=logging.DEBUG)
 
-    # Example tool configuration for testing
-    tool_config = {
-        "type": "tool",
-        "label": "Test Tool",
-        "id": "test_tool",
-        "status": "off",
-        "preferences": {
-            "use_collector": True,
-            "gate_prefs": ["TEST_GATE"],
-            "last_used": 0,
-            "spin_down_time": 5
-        },
-        "button": {
-            "label": "Test Button",
-            "id": "test_button",
-            "type": "RGBLED_Button",
-            "physical_location": "Test Location",
-            "connection": {
-                "hub": "main-hub",
-                "address": "0x20",
-                "pin": 0
-            },
-            "led": {
-                "label": "Test Button LED",
-                "id": "test_button_led",
-                "type": "RGBLED",
-                "physical_location": "Test Location",
-                "connection": {
-                    "hub": "main-hub",
-                    "address": "0x40",
-                    "pins": [0, 1, 2]
-                }
-            }
-        },
-        "volt": {
-            "label": "VS for test",
-            "version": "20 amp",
-            "voltage_address": {
-                "board_address": "0x49",
-                "pin": 0
-            },
-            "multiplier": 3
-        }
-    }
+    # Load the configuration
+    config_path = os.path.join(base_dir, 'config.json')
+    config = load_config(config_path)
 
     i2c = busio.I2C(board.SCL, board.SDA)
 
-    # Create an instance of Tool
-    tool = Tool(tool_config, i2c, 'path/to/styles.json')
+    tools = []
+    for tool_config in config['tools']:
+        logger.debug(f"Initializing tool {tool_config['label']}")
+        tool = Tool(tool_config, i2c, os.path.join(base_dir, 'styles.json'))
+        tools.append(tool)
+        time.sleep(1)  # Add a delay to ensure proper initialization
 
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        tool.stop()
+        for tool in tools:
+            tool.stop()
         logger.info("Test interrupted by user")

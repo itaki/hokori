@@ -46,7 +46,7 @@
                 "connection": {
                     "hub": "main-hub",
                     "address": "0x20",
-                    "pin": 0
+                    "pin": 3
                 },
                 "led": {
                     "label": "Hose LED",
@@ -56,12 +56,60 @@
                     "connection": {
                         "hub": "main-hub",
                         "address": "0x40",
-                        "pins": [0, 1, 2]
+                        "pins": [6, 7, 8]
                     }
                 }
             },
             "volt": {},
             "keyboard_key": 0
+        },
+        {
+            "type": "dust_collector",
+            "label": "Main Collector",
+            "id": "main-collector",
+            "preferences": {
+                "spin_up_delay": 10,
+                "minimum_up_time": 10,
+                "cool_down_time": 30
+            },
+            "relay": {
+                "label": "Main Collector Relay",
+                "id": "main_collector_relay",
+                "type": "Relay",
+                "physical_location": "By the collector",
+                "connection": {
+                    "hub": "main-hub",
+                    "address": "0x20",
+                    "pin": 2
+                },
+                "status": "off"
+            }
+        },
+        {
+            "type": "tool",
+            "label": "Miter Saw",
+            "id": "miter_saw",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["MiterSaw_Gate"],
+                "last_used": 0,
+                "spin_down_time": 10
+            },
+            "button": {},
+            "led": {},
+            "volt": {
+                "label": "VS for miter saw",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "voltage_address": {
+                    "board_address": "0x49",
+                    "pin": 0
+                },
+                "multiplier": 3,
+                "status": "off"
+            },
+            "keyboard_key": 50
         },
         {
             "type": "tool",
@@ -81,7 +129,7 @@
                 "connection": {
                     "hub": "main-hub",
                     "address": "0x20",
-                    "pin": 1
+                    "pin": 0
                 },
                 "led": {
                     "label": "LEFT Miter Saw Button LED",
@@ -91,7 +139,7 @@
                     "connection": {
                         "hub": "main-hub",
                         "address": "0x40",
-                        "pins": [3, 4, 5]
+                        "pins": [0, 1, 2]
                     }
                 }
             },
@@ -116,7 +164,7 @@
                 "connection": {
                     "hub": "main-hub",
                     "address": "0x20",
-                    "pin": 2
+                    "pin": 1
                 },
                 "led": {
                     "label": "RIGHT Miter Saw Button LED",
@@ -126,7 +174,7 @@
                     "connection": {
                         "hub": "main-hub",
                         "address": "0x40",
-                        "pins": [6, 7, 8]
+                        "pins": [3, 4, 5]
                     }
                 }
             },
@@ -135,4 +183,3 @@
         }
     ]
 }
-

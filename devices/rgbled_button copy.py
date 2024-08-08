@@ -1,16 +1,19 @@
 import os
 import sys
+import time
 import logging
 import board
 import busio
-from adafruit_pca9685 import PCA9685
 
+# Add the parent directory of the current file to the system path
 base_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(base_dir)
 sys.path.append(parent_dir)
 
+import time
+from adafruit_pca9685 import PCA9685
 from utils.style_manager import Style_Manager
-
+from button_manager import Button_Manager  # Import the Button_Manager class
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +62,7 @@ class RGBLED_Button:
             self.led_red.duty_cycle = 0xFFFF - color["red"]
             self.led_green.duty_cycle = 0xFFFF - color["green"]
             self.led_blue.duty_cycle = 0xFFFF - color["blue"]
-            logger.debug(f"Set {self.label} LED color to {color}")
+            #logger.debug(f"Set {self.label} LED color to {color}")
 
     def update_led(self, state):
         if self.led_type == "RGB":
@@ -69,11 +72,6 @@ class RGBLED_Button:
                 self._set_led_color(self.styles["RGBLED_button_styles"]["RGBLED_off_color"])  # Set LED to off color
 
 if __name__ == "__main__":
-    import time
-    import board
-    import busio
-    from button_manager import Button_Manager
-
     logging.basicConfig(level=logging.DEBUG)
 
     i2c = busio.I2C(board.SCL, board.SDA)
@@ -164,7 +162,7 @@ if __name__ == "__main__":
             for label, button in rgbled_buttons.items():
                 state = any(btn_label == label and not btn.value for btn_label, btn in button_manager.buttons)
                 button.update_led(state)
-            time.sleep(0.1)
+            time.sleep(1)
     except KeyboardInterrupt:
         button_manager.stop()
         logger.info("Program interrupted by user")
