@@ -2,6 +2,8 @@ import logging
 from .rgbled_button import RGBLED_Button
 from .voltage_sensor import Voltage_Sensor
 
+logger = logging.getLogger(__name__)
+
 class Tool:
     def __init__(self, tool_config, mcp, pca, styles, i2c):
         self.label = tool_config['label']
@@ -12,20 +14,31 @@ class Tool:
         self.gate_prefs = self.preferences.get('gate_prefs', [])  # Extract gate_prefs
         self.volt = tool_config.get('volt', {})
         self.keyboard_key = tool_config.get('keyboard_key', None)
+        self.physical_location = tool_config.get('physical_location', '')
 
         # Initialize the button if it exists and is properly configured
         self.button_status = 'off'
-        if 'button' in tool_config and 'label' in tool_config['button']:
-            self.button = RGBLED_Button(tool_config['button'], mcp, pca, styles['RGBLED_button_styles'], self.update_status_from_button)
-        else:
-            self.button = None
+        try:
+            if 'button' in tool_config and 'label' in tool_config['button']:
+                self.button = RGBLED_Button(tool_config['button'], mcp, pca, styles['RGBLED_button_styles'], self.update_status_from_button)
+            else:
+                self.button = None
+        except Exception as e:
+            logger.error(f"Error initializing button for tool {self.label}: {e}")
+            return  # Skip initialization if button fails
 
         # Initialize the voltage detector if it exists
         self.voltage_status = 'off'
-        if 'volt' in tool_config and 'voltage_address' in tool_config['volt']:
-            self.voltage_sensor = Voltage_Sensor(tool_config['volt'], i2c, self.update_status_from_voltage)
-        else:
-            self.voltage_sensor = None
+        try:
+            if 'volt' in tool_config and 'voltage_address' in tool_config['volt']:
+                self.voltage_sensor = Voltage_Sensor(tool_config['volt'], i2c, self.update_status_from_voltage)
+            else:
+                self.voltage_sensor = None
+        except Exception as e:
+            logger.error(f"Error initializing voltage sensor for tool {self.label}: {e}")
+            return  # Skip initialization if voltage sensor fails
+
+        logger.debug(f"Tool {self.label} initialized successfully.")
 
     def toggle_button(self):
         if self.button:

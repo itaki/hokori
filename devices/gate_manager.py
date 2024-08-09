@@ -41,28 +41,36 @@ class Gate:
         self.max = gate_info['max']
         self.status = gate_info['status']
         self.previous_status = gate_info['status']  # Initialize with the current status
-        self.servo_kit = ServoKit(channels=16, address=self.address)
-        self.servo = self.servo_kit.servo[self.pin]
-        self.init_servo()
+
+        try:
+            self.servo_kit = ServoKit(channels=16, address=self.address)
+            self.servo = self.servo_kit.servo[self.pin]
+            self.init_servo()
+            logger.debug(f"Gate {self.name} initialized on address {hex(self.address)} at pin {self.pin}")
+        except ValueError as e:
+            logger.error(f"Error initializing gate {self.name} at address {hex(self.address)}: {e}")
+            logger.warning(f"Gate {self.name} will not be functional due to initialization failure.")
+            self.servo_kit = None
+            self.servo = None
 
     def init_servo(self):
-        try:
-            self.servo.set_pulse_width_range(1000, 2000)  # Set default pulse width range
-            return True
-        except Exception as e:
-            logger.debug(f"FAILED to create gate at address {self.address} on pin {self.pin}: {e}")
-            return False
+        if self.servo:
+            try:
+                self.servo.set_pulse_width_range(1000, 2000)  # Set default pulse width range
+            except Exception as e:
+                logger.error(f"Failed to set pulse width range for gate {self.name}: {e}")
+                self.servo = None
 
     def start_pwm(self):
-        # You can implement any specific initialization needed for your servo here
-        pass
+        if self.servo:
+            pass  # Implement specific initialization needed for your servo here
 
     def stop_pwm(self):
-        # Set the servo to a neutral or low-power state
-        self.servo.fraction = None  # This should turn off the PWM signal
+        if self.servo:
+            self.servo.fraction = None  # This should turn off the PWM signal
 
     def open(self):
-        if self.status != "open":
+        if self.servo and self.status != "open":
             self.start_pwm()
             self.servo.angle = self.max
             time.sleep(0.5)  # Allow time for the servo to move
@@ -70,7 +78,7 @@ class Gate:
             self.update_status("open")
     
     def close(self):
-        if self.status != "closed":
+        if self.servo and self.status != "closed":
             self.start_pwm()
             self.servo.angle = self.min
             time.sleep(0.5)  # Allow time for the servo to move
@@ -84,19 +92,20 @@ class Gate:
             logger.info(f"Gate {self.name} {new_status}.")
     
     def identify(self):
-        self.start_pwm()
-        i = 0
-        while i < 20:
-            self.servo.angle = 80
-            time.sleep(.2)
-            self.servo.angle = 100
-            time.sleep(.2)
-            i += 1
-        if self.status == 'open':
-            self.open()
-        else:
-            self.close()
-        self.stop_pwm()
+        if self.servo:
+            self.start_pwm()
+            i = 0
+            while i < 20:
+                self.servo.angle = 80
+                time.sleep(.2)
+                self.servo.angle = 100
+                time.sleep(.2)
+                i += 1
+            if self.status == 'open':
+                self.open()
+            else:
+                self.close()
+            self.stop_pwm()
 
 class Gate_Manager:
     def __init__(self, gates_file=GATES_FILE, backup_dir=BACKUP_DIR):
@@ -134,8 +143,12 @@ class Gate_Manager:
         '''Builds Gate objects from the loaded gate data'''
         self.gates = {}
         for name, gate_info in self.gates_dict['gates'].items():
-            self.gates[name] = Gate(name, gate_info)
-            logger.debug(f'Gate {name} created with address {gate_info["io_location"]["address"]} and pin {gate_info["io_location"]["pin"]}')
+            gate = Gate(name, gate_info)
+            if gate.servo:  # Only add the gate if it initialized successfully
+                self.gates[name] = gate
+                logger.debug(f'Gate {name} created with address {gate_info["io_location"]["address"]} and pin {gate_info["io_location"]["pin"]}')
+            else:
+                logger.warning(f'Gate {name} could not be initialized and will be skipped.')
 
     def backup_gates(self):
         '''Backs up the gates configuration to a timestamped file in the backup directory'''
@@ -195,7 +208,7 @@ class Gate_Manager:
             current_tool = tools[t]
             if current_tool.status != 'off':
                 for gate_pref in current_tool.gate_prefs:
-                    if gate_pref not in open_gates:
+                    if gate_pref in self.gates and gate_pref not in open_gates:
                         open_gates.append(gate_pref)
         return open_gates
     
