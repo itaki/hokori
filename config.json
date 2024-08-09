@@ -1,6 +1,6 @@
 {
     "info": [
-        { "name": "Shop with 1 hub connected to a button and led" }
+        { "name": "Shop with 3 hubs connected to various tools" }
     ],
     "hubs": [
         {
@@ -23,6 +23,30 @@
             "ad_converter": {
                 "type": "ADS1115",
                 "i2c_address": "0x49"
+            }
+        },
+        {
+            "type": "hub",
+            "label": "Hub 1",
+            "id": "hub_1",
+            "version": 1,
+            "gpio_expander": {
+                "type": "MCP23017",
+                "i2c_address": "0x48"
+            }
+        },
+        {
+            "type": "hub",
+            "label": "Hub 2",
+            "id": "hub_2",
+            "version": 1,
+            "gpio_expander": {
+                "type": "MCP23017",
+                "i2c_address": "0x43"
+            },
+            "ad_converter": {
+                "type": "ADS1115",
+                "i2c_address": "0x4A"
             }
         }
     ],
@@ -61,7 +85,8 @@
                 }
             },
             "volt": {},
-            "keyboard_key": 0
+            "keyboard_key": 0,
+            "physical_location": ""
         },
         {
             "type": "tool",
@@ -75,6 +100,7 @@
                 "spin_down_time": 10
             },
             "button": {
+                "physical_location": ""
             },
             "volt": {
                 "label": "VS for miter saw",
@@ -86,7 +112,11 @@
                 },
                 "multiplier": 3
             },
-            "keyboard_key": 50
+            "keyboard_key": 50,
+            "physical_location": "",
+            "connection": {
+                "hub": "main-hub"
+            }
         },
         {
             "type": "tool",
@@ -118,7 +148,10 @@
                         "pins": [3, 4, 5]
                     }
                 }
-            }
+            },
+            "volt": {},
+            "keyboard_key": 0,
+            "physical_location": ""
         },
         {
             "type": "tool",
@@ -150,11 +183,14 @@
                         "pins": [6, 7, 8]
                     }
                 }
-            }
+            },
+            "volt": {},
+            "keyboard_key": 0,
+            "physical_location": ""
         },
         {
             "type": "tool",
-            "label": "floowSweep",
+            "label": "Floor Sweep",
             "id": "floor_sweep",
             "status": "off",
             "preferences": {
@@ -182,9 +218,187 @@
                         "pins": [9, 10, 11]
                     }
                 }
+            },
+            "volt": {},
+            "keyboard_key": 0,
+            "physical_location": ""
+        },
+        {
+            "type": "tool",
+            "label": "Band Saw",
+            "id": "band_saw",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["BandSaw", "Corner_Branch"],
+                "last_used": 0,
+                "spin_down_time": 15
+            },
+            "button": {
+                "physical_location": ""
+            },
+            "volt": {
+                "label": "VS for band saw",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "voltage_address": {
+                    "board_address": "0x48",
+                    "pin": 1
+                },
+                "multiplier": 3
+            },
+            "keyboard_key": 49,
+            "physical_location": "",
+            "connection": {
+                "hub": "hub_1"
+            }
+        },
+        {
+            "type": "tool",
+            "label": "Lathe",
+            "id": "lathe",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["Lathe", "Corner_Branch"],
+                "last_used": 0,
+                "spin_down_time": 15
+            },
+            "button": {
+                "physical_location": ""
+            },
+            "volt": {},
+            "keyboard_key": 52,
+            "physical_location": "",
+            "connection": {
+                "hub": "hub_1"
+            }
+        },
+        {
+            "type": "tool",
+            "label": "Table Saw",
+            "id": "table_saw",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["Table_Saw_Main", "Vertical_Tube", "Island_Branch", "Table_Saw_Hood"],
+                "last_used": 0,
+                "spin_down_time": 10
+            },
+            "button": {
+                "type": "RELAY",
+                "label": "Table Saw Button",
+                "id": "table_saw_button",
+                "physical_location": "At the Table Saw",
+                "connection": {
+                    "hub": "hub_2",
+                    "address": "0x43",
+                    "pin": 3
+                }
+            },
+            "volt": {
+                "label": "VS for table saw",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "voltage_address": {
+                    "board_address": "0x4A",
+                    "pin": 0
+                },
+                "multiplier": 3
+            },
+            "keyboard_key": 49,
+            "physical_location": ""
+        },
+        {
+            "type": "tool",
+            "label": "Router",
+            "id": "router",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["Vertical_Tube", "Island_Branch", "Router_Table"],
+                "last_used": 0,
+                "spin_down_time": 1
+            },
+            "button": {
+                "physical_location": ""
+            },
+            "volt": {
+                "label": "VS for router",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "voltage_address": {
+                    "board_address": "0x4A",
+                    "pin": 1
+                },
+                "multiplier": 3
+            },
+            "keyboard_key": 49,
+            "physical_location": "",
+            "connection": {
+                "hub": "hub_2"
+            }
+        },
+        {
+            "type": "tool",
+            "label": "Sanding Table",
+            "id": "sanding_table",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["Vertical_Tube", "Island_Branch", "Sanding_Table"],
+                "last_used": 0,
+                "spin_down_time": 0
+            },
+            "button": {
+                "physical_location": ""
+            },
+            "volt": {
+                "label": "VS for sanding table",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "voltage_address": {
+                    "board_address": "0x4A",
+                    "pin": 3
+                },
+                "multiplier": 3
+            },
+            "keyboard_key": 49,
+            "physical_location": "",
+            "connection": {
+                "hub": "hub_2"
+            }
+        },
+        {
+            "type": "tool",
+            "label": "Planer",
+            "id": "planer",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["Planer", "Vertical_Tube", "Island_Branch"],
+                "last_used": 0,
+                "spin_down_time": 10
+            },
+            "button": {
+                "physical_location": ""
+            },
+            "volt": {
+                "label": "VS for planer",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "voltage_address": {
+                    "board_address": "0x4A",
+                    "pin": 2
+                },
+                "multiplier": 3
+            },
+            "keyboard_key": 49,
+            "physical_location": "",
+            "connection": {
+                "hub": "hub_2"
             }
         }
-        
     ],
     "collectors": [
         {

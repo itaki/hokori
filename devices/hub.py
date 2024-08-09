@@ -1,8 +1,8 @@
+import logging
 from adafruit_mcp230xx.mcp23017 import MCP23017
 from adafruit_pca9685 import PCA9685
 import adafruit_ads1x15.ads1115 as ADS
 from adafruit_bus_device.i2c_device import I2CDevice
-import logging
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -18,8 +18,8 @@ class Hub:
         try:
             self.gpio_expander = self.initialize_gpio_expander(config['gpio_expander'])
             self.pwm_servo = self.initialize_pwm_servo(config['pwm_servo'])
-            self.ad_converter = self.initialize_ad_converter(config['ad_converter'])
             self.pwm_led = self.initialize_pwm_led(config['pwm_led'])
+            self.ad_converter = self.initialize_ad_converter(config['ad_converter'])
         except KeyError as e:
             logger.error(f"Configuration error: missing key {e} in hub configuration for {self.label}")
         except ValueError as e:
