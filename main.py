@@ -8,6 +8,7 @@ import busio
 from devices.poll_buttons import Poll_Buttons
 from devices.tool import Tool
 from devices.dust_collector import Dust_Collector
+from devices.gate_manager import Gate_Manager
 from adafruit_mcp230xx.mcp23017 import MCP23017
 from adafruit_pca9685 import PCA9685
 from utils.style_manager import Style_Manager
@@ -49,8 +50,11 @@ for tool_config in config.get('tools', []):
 # Initialize dust collectors
 dust_collectors = []
 for dc_config in config.get('collectors', []):
-    dust_collector = Dust_Collector(dc_config)  # Pass only the configuration, not i2c
+    dust_collector = Dust_Collector(dc_config)
     dust_collectors.append(dust_collector)
+
+# Initialize Gate Manager
+gate_manager = Gate_Manager()
 
 # Extract all buttons for polling
 buttons = [tool.button for tool in tools if tool.button is not None]
@@ -59,12 +63,25 @@ buttons = [tool.button for tool in tools if tool.button is not None]
 poller = Poll_Buttons(buttons, styles['RGBLED_button_styles'])
 poller.start_polling()
 
+# Helper function to update gates based on current tool statuses
+def update_gates():
+    active_tools = [tool for tool in tools if tool.status == 'on']
+    if active_tools:
+        gate_manager.set_gates({tool.id: tool for tool in active_tools})
+
 try:
     while True:
-        # Check tool statuses and manage dust collectors
-        for tool in tools:
-            tool.update_status()
+        # We assume tools are updated in the background, so we only need to react to changes
+        tool_states_changed = any(tool.status_changed for tool in tools)
         
+        # If any tool status changed, update gates
+        if tool_states_changed:
+            update_gates()
+            for tool in tools:
+                tool.reset_status_changed()  # Reset the status changed flag after processing
+
+        
+        # Manage dust collectors
         for dust_collector in dust_collectors:
             dust_collector.manage_collector(tools)
         

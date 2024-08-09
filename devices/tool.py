@@ -7,7 +7,9 @@ class Tool:
         self.label = tool_config['label']
         self.id = tool_config['id']
         self.status = tool_config.get('status', 'off')
+        self.status_changed = False  # Flag to track status changes
         self.preferences = tool_config.get('preferences', {})
+        self.gate_prefs = self.preferences.get('gate_prefs', [])  # Extract gate_prefs
         self.volt = tool_config.get('volt', {})
         self.keyboard_key = tool_config.get('keyboard_key', None)
 
@@ -42,6 +44,12 @@ class Tool:
         new_status = 'on' if self.button_status == 'on' or self.voltage_status == 'on' else 'off'
         if new_status != self.status:
             self.status = new_status
+            self.status_changed = True  # Mark the status as changed
             # Log the status change
             print(f"Tool {self.label} status changed to {self.status}")
             logging.info(f"Tool {self.label} status changed to {self.status}")
+        else:
+            self.status_changed = False  # No change in status
+
+    def reset_status_changed(self):
+        self.status_changed = False
