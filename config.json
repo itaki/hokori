@@ -163,8 +163,8 @@
             },
             "button": {
                 "type": "RGBLED_Button",
-                "label": "RIGHT Miter Saw Button",
-                "id": "right_miter_saw_button",
+                "label": "Floor Sweep Button",
+                "id": "floor_sweep_button",
                 "physical_location": "Above the miter saw",
                 "connection": {
                     "hub": "main-hub",
@@ -172,8 +172,8 @@
                     "pin": 3
                 },
                 "led": {
-                    "label": "Right Miter Saw Button LED",
-                    "id": "right_miter_saw_button_LED",
+                    "label": "Floor Sweep Button LED",
+                    "id": "floor_sweep_button_LED",
                     "type": "RGBLED",
                     "physical_location": "Above the miter saw",
                     "connection": {
