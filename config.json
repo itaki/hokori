@@ -159,7 +159,7 @@
             "status": "off",
             "preferences": {
                 "use_collector": false,
-                "gate_prefs": ["MiterSaw_Right_Gate"]
+                "gate_prefs": ["FloorSweep_Gate"]
             },
             "button": {
                 "type": "RGBLED_Button",

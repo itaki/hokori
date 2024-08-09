@@ -10,9 +10,10 @@ class Poll_Buttons:
         while True:
             for button in self.buttons:
                 if not button.button.value:  # Button press detected
-                    button.toggle(self.rgbled_styles)
+                    button.toggle()  # No need to pass self.rgbled_styles here
                     time.sleep(0.5)  # Debounce delay
             time.sleep(0.1)  # Small delay to avoid busy-waiting
+
 
     def start_polling(self):
         polling_thread = threading.Thread(target=self.poll_buttons, daemon=True)

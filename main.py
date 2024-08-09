@@ -1,92 +1,62 @@
-import time
 import os
-import board
-import busio
-import logging
 import json
+import time
+import logging
+import board
+import sys
+import busio
+from devices.poll_buttons import Poll_Buttons
 from devices.tool import Tool
-from devices.gate_manager import Gate_Manager
-from devices.dust_collector import Dust_Collector
+from adafruit_mcp230xx.mcp23017 import MCP23017
+from adafruit_pca9685 import PCA9685
+from utils.style_manager import Style_Manager  # Ensure this import is correct
 
-# Constants for configuration files and backup directory
-DEVICE_FILE = 'config.json'
-GATES_FILE = 'gates.json'
-STYLES_FILE = 'styles.json'
-
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)  # Set logging to DEBUG level for detailed logging
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def main():
-    dust_collector = None
-    try:
-        # Initialize I2C
-        i2c = busio.I2C(board.SCL, board.SDA)
-        
-        # Load styles from the styles.json file
-        styles_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), STYLES_FILE)
-        
-        # Load the configuration from the config.json file
-        config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), DEVICE_FILE)
-        with open(config_file, 'r') as f:
-            config = json.load(f)
-        
-        tools = [Tool(tool, i2c, styles_path) for tool in config['tools']]
-        logger.info(f"Initialized {len(tools)} tools.")
-        
-        # Initialize Gate Manager
-        gate_manager = Gate_Manager(GATES_FILE, i2c)
-        logger.info(f"Gate initialization complete.")
-        
-        # Initialize Dust Collector
-        dust_collector_config = config['collectors'][0] if 'collectors' in config and config['collectors'] else None
-        dust_collector = Dust_Collector(dust_collector_config, i2c) if dust_collector_config else None
-        if dust_collector:
-            logger.info(f"Dust collector {dust_collector.label} initialized.")
+# Load the configuration file
+config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+with open(config_path, 'r') as config_file:
+    config = json.load(config_file)  # Make sure this line is correct and that config.json exists and is properly formatted
 
-        # Main loop to manage tool status and dust collector
-        running = True
-        while running:
-            active_gates = set()
-            any_tool_active = False  # Flag to track if any tool is active
+# Load the styles using Style_Manager
+style_manager = Style_Manager()
+styles = style_manager.get_styles()
 
-            for tool in tools:
-                # The tool's status is now managed by its components (buttons and voltage sensors)
+# Initialize I2C bus
+i2c = busio.I2C(board.SCL, board.SDA)
 
-                if tool.status == 'on':
-                    any_tool_active = True
-                    active_gates.update(tool.gate_prefs)
+# Initialize MCP23017 based on the first button's connection address
+if config.get('tools', []):
+    mcp_address = int(config['tools'][0]['button']['connection']['address'], 16)
+    mcp = MCP23017(i2c, address=mcp_address)
+else:
+    logger.error("No valid button configurations found. Exiting.")
+    sys.exit(1)
 
-            # Open preferred gates and close others only if any tool is active
-            if any_tool_active:
-                for gate_id, gate in gate_manager.gates.items():
-                    if gate_id in active_gates:
-                        gate_manager.open_gate(gate_id)
-                    else:
-                        gate_manager.close_gate(gate_id)
+# Initialize PCA9685 for LED control (assuming all LEDs are on the same hub)
+pca_address = int(config['tools'][0]['button']['led']['connection']['address'], 16)
+pca = PCA9685(i2c, address=pca_address)
+pca.frequency = 1000
 
-            # Manage dust collector
-            if dust_collector:
-                dust_collector.manage_collector(tools)
+# Initialize tools
+tools = []
+for tool_config in config.get('tools', []):
+    tool = Tool(tool_config, mcp, pca, styles, i2c)
+    tools.append(tool)
 
-            time.sleep(0.1)  # Small delay to avoid busy waiting
+# Extract all buttons for polling
+buttons = [tool.button for tool in tools if tool.button is not None]
 
-    except FileNotFoundError as e:
-        logger.error(e)
-        print(e)
-        exit(1)
-    except KeyboardInterrupt:
-        logger.info("Shutting down due to keyboard interrupt.")
-        running = False
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        print(f"Unexpected error: {e}")
-        exit(1)
-    finally:
-        if dust_collector:
-            dust_collector.turn_off()
-            dust_collector.cleanup()
-        logger.info("Clean shutdown complete.")
+# Initialize polling
+poller = Poll_Buttons(buttons, styles['RGBLED_button_styles'])  # Pass the styles to Poll_Buttons
+poller.start_polling()
 
-if __name__ == "__main__":
-    main()
+try:
+    while True:
+        # Check tool statuses and log changes
+        for tool in tools:
+            tool.update_status()
+        time.sleep(1)  # Adjust the sleep time as needed
+except KeyboardInterrupt:
+    logger.info("Program interrupted by user")
