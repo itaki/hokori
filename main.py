@@ -1,95 +1,92 @@
-import time
 import os
-import board
-import busio
-import logging
 import json
+import time
+import logging
+import board
+import sys
+import busio
+from devices.poll_buttons import Poll_Buttons
 from devices.tool import Tool
-from devices.gate_manager import Gate_Manager
 from devices.dust_collector import Dust_Collector
+from devices.gate_manager import Gate_Manager
+from adafruit_mcp230xx.mcp23017 import MCP23017
+from adafruit_pca9685 import PCA9685
+from utils.style_manager import Style_Manager
 
-# Constants for configuration files and backup directory
-DEVICE_FILE = 'config.json'
-GATES_FILE = 'gates.json'
-STYLES_FILE = 'styles.json'
-
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)  # Set logging to DEBUG level for detailed logging
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def main():
-    dust_collector = None
-    try:
-        # Initialize I2C
-        i2c = busio.I2C(board.SCL, board.SDA)
-        
-        # Load styles from the styles.json file
-        styles_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), STYLES_FILE)
-        
-        # Load the configuration from the config.json file
-        config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), DEVICE_FILE)
-        with open(config_file, 'r') as f:
-            config = json.load(f)
-        
-        tools = [Tool(tool, i2c, styles_path) for tool in config['devices'] if tool['type'] == 'tool']
-        logger.info(f"Initialized {len(tools)} tools.")
-        
-        # Initialize Gate Manager
-        gate_manager = Gate_Manager(GATES_FILE, i2c)
-        logger.info(f"Gate initialization complete.")
-        
-        # Initialize Dust Collector
-        dust_collector_config = next((device for device in config['devices'] if device['type'] == 'dust_collector'), None)
-        dust_collector = Dust_Collector(dust_collector_config, i2c) if dust_collector_config else None
-        if dust_collector:
-            logger.info(f"Dust collector {dust_collector.label} initialized.")
+# Load the configuration file
+config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+with open(config_path, 'r') as config_file:
+    config = json.load(config_file)
 
-        # Main loop to check for button presses, voltage, and modifier button presses
-        running = True
-        while running:
-            active_gates = set()
-            any_tool_active = False  # Flag to track if any tool is active
+# Load the styles using Style_Manager
+style_manager = Style_Manager()
+styles = style_manager.get_styles()
 
+# Initialize I2C bus
+i2c = busio.I2C(board.SCL, board.SDA)
+
+# Initialize MCP23017 based on the first button's connection address
+if config.get('tools', []):
+    mcp_address = int(config['tools'][0]['button']['connection']['address'], 16)
+    mcp = MCP23017(i2c, address=mcp_address)
+else:
+    logger.error("No valid button configurations found. Exiting.")
+    sys.exit(1)
+
+# Initialize PCA9685 for LED control (assuming all LEDs are on the same hub)
+pca_address = int(config['tools'][0]['button']['led']['connection']['address'], 16)
+pca = PCA9685(i2c, address=pca_address)
+pca.frequency = 1000
+
+# Initialize tools
+tools = []
+for tool_config in config.get('tools', []):
+    tool = Tool(tool_config, mcp, pca, styles, i2c)
+    tools.append(tool)
+
+# Initialize dust collectors
+dust_collectors = []
+for dc_config in config.get('collectors', []):
+    dust_collector = Dust_Collector(dc_config)
+    dust_collectors.append(dust_collector)
+
+# Initialize Gate Manager
+gate_manager = Gate_Manager()
+
+# Extract all buttons for polling
+buttons = [tool.button for tool in tools if tool.button is not None]
+
+# Initialize polling
+poller = Poll_Buttons(buttons, styles['RGBLED_button_styles'])
+poller.start_polling()
+
+# Helper function to update gates based on current tool statuses
+def update_gates():
+    active_tools = [tool for tool in tools if tool.status == 'on']
+    if active_tools:
+        gate_manager.set_gates({tool.id: tool for tool in active_tools})
+
+try:
+    while True:
+        # We assume tools are updated in the background, so we only need to react to changes
+        tool_states_changed = any(tool.status_changed for tool in tools)
+        
+        # If any tool status changed, update gates
+        if tool_states_changed:
+            update_gates()
             for tool in tools:
-                tool.check_button()  # Check the main tool button
-                tool.check_voltage()  # Check the voltage sensor
-                tool.check_modifiers()  # Check the modifier buttons
-                
-                if tool.status == 'on':
-                    any_tool_active = True
-                    active_gates.update(tool.gate_prefs)
+                tool.reset_status_changed()  # Reset the status changed flag after processing
 
-            # Open preferred gates and close others only if any tool is active
-            if any_tool_active:
-                for gate_id, gate in gate_manager.gates.items():
-                    if gate_id in active_gates:
-                        gate_manager.open_gate(gate_id)
-                    else:
-                        gate_manager.close_gate(gate_id)
-
-            # Manage dust collector
-            if dust_collector:
-                #logger.debug(f"Managing dust collector for {len(tools)} tools.")
-                dust_collector.manage_collector(tools)
-
-            time.sleep(0.1)  # Small delay to avoid busy waiting
-
-    except FileNotFoundError as e:
-        logger.error(e)
-        print(e)
-        exit(1)
-    except KeyboardInterrupt:
-        logger.info("Shutting down due to keyboard interrupt.")
-        running = False
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        print(f"Unexpected error: {e}")
-        exit(1)
-    finally:
-        if dust_collector:
-            dust_collector.turn_off()
-            dust_collector.cleanup()
-        logger.info("Clean shutdown complete.")
-
-if __name__ == "__main__":
-    main()
+        
+        # Manage dust collectors
+        for dust_collector in dust_collectors:
+            dust_collector.manage_collector(tools)
+        
+        time.sleep(1)  # Adjust the sleep time as needed
+except KeyboardInterrupt:
+    logger.info("Program interrupted by user")
+    for dust_collector in dust_collectors:
+        dust_collector.cleanup()

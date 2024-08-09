@@ -19,7 +19,7 @@ SAMPLE_SIZE = 50
 TRIGGER_THRESHOLD = 1.003
 
 class Voltage_Sensor:
-    def __init__(self, volt_config, i2c):
+    def __init__(self, volt_config, i2c, status_callback):
         self.label = volt_config.get('label', 'unknown')
         self.board_address = int(volt_config['voltage_address']['board_address'], 16)
         self.pin = volt_config['voltage_address']['pin']
@@ -31,7 +31,7 @@ class Voltage_Sensor:
         self.std_dev_threshold = None
         self.readings = []
         self.trigger = None
-        self.status = 'off'
+        self.status_callback = status_callback
         self.last_status = 'off'
 
         self.initialize_sensor()
@@ -81,17 +81,11 @@ class Voltage_Sensor:
             self.readings.pop(0)
         current_max = max(self.readings)
 
-        if current_max > self.trigger:
-            self.status = 'on'
-        else:
-            self.status = 'off'
-
-        if self.status != self.last_status:
-            logger.debug(f" {self.label} Voltage Sensor: {self.status}")
-            self.last_status = self.status
-
-    def am_i_on(self):
-        return self.status == 'on'
+        new_status = 'on' if current_max > self.trigger else 'off'
+        if new_status != self.last_status:
+            logger.debug(f"{self.label} Voltage Sensor: {new_status}")
+            self.status_callback(new_status)
+            self.last_status = new_status
 
     def stop(self):
         self.stop_event.set()
