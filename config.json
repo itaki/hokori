@@ -203,9 +203,8 @@
                 "type": "Relay",
                 "physical_location": "By the collector",
                 "connection": {
-                    "hub": "main-hub",
-                    "address": "0x20",
-                    "pin": 7
+                    "hub": "local",
+                    "pin": 21
                 }
             }
         }
