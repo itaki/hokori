@@ -1,90 +1,72 @@
-import time
+import os
+import sys
+import json
+import logging
 import board
 import busio
-import logging
-import os
-import json
-import sys
+import time
+from adafruit_mcp230xx.mcp23017 import MCP23017
+from adafruit_pca9685 import PCA9685
+from rgbled_button import RGBLED_Button
+from pole_buttons import Poll_Buttons
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Add the parent directory of the current file to the system path
 base_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(base_dir)
 sys.path.append(parent_dir)
 
-from devices.rgbled_button import RGBLED_Button  # Import for button
-from devices.voltage_sensor import Voltage_Sensor  # Import for voltage sensor
+# Load the configuration file
+config_path = os.path.join(parent_dir, 'config.json')
+with open(config_path, 'r') as config_file:
+    config = json.load(config_file)
 
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# LED color styles from the config
+rgbled_styles = config.get('RGBLED_button_styles', {
+    "RGBLED_off_color": {
+        "red": 0,
+        "green": 0,
+        "blue": 0x6FFF
+    },
+    "RGBLED_on_color": {
+        "red": 0xFFFF,
+        "green": 0,
+        "blue": 0xFFFF
+    }
+})
 
-class Tool:
-    def __init__(self, tool_config, i2c, styles_path):
-        self.id = tool_config.get('id', 'unknown')
-        self.label = tool_config.get('label', 'unknown')
-        self.preferences = tool_config.get('preferences', {})
-        self.status = tool_config.get('status', 'off')  # Initialize status
-        self.override = False
-        self.gate_prefs = set(self.preferences.get('gate_prefs', []))
-        self.spin_down_time = self.preferences.get('spin_down_time', 0)
-        self.last_used = 0
-        self.flagged = True
+# Initialize I2C bus
+i2c = busio.I2C(board.SCL, board.SDA)
 
-        self.i2c = i2c
-        self.styles_path = styles_path
-        self.button = None
-        self.voltage_sensor = None
+# Initialize MCP23017 based on the first button's connection address
+if config.get('tools', []):
+    mcp_address = int(config['tools'][0]['button']['connection']['address'], 16)
+    mcp = MCP23017(i2c, address=mcp_address)
+else:
+    logger.error("No valid button configurations found. Exiting.")
+    sys.exit(1)
 
-        # Initialize components
-        try:
-            self.initialize_button(tool_config.get('button', {}))
-            self.initialize_voltage_sensor(tool_config.get('volt', {}))
-        except Exception as e:
-            logger.error(f"Unexpected error initializing tool {self.label}: {e}")
+# Initialize PCA9685 for LED control (assuming all LEDs are on the same hub)
+pca_address = int(config['tools'][0]['button']['led']['connection']['address'], 16)
+pca = PCA9685(i2c, address=pca_address)
+pca.frequency = 1000
 
-        logger.debug(f"Tool {self.label} initialized with ID {self.id}")
+# Initialize buttons
+buttons = []
+for tool in config.get('tools', []):
+    if tool.get('button'):
+        button = RGBLED_Button(tool['button'], mcp, pca, rgbled_styles)
+        buttons.append(button)
 
-    def initialize_button(self, btn_config):
-        if btn_config:
-            try:
-                self.button = RGBLED_Button(btn_config, self.i2c, self.styles_path, self.set_status)
-                logger.debug(f"Tool button initialized for tool {self.label}")
-            except KeyError as e:
-                logger.error(f"Configuration error: missing key {e} in tool button configuration for {self.label}")
-            except TypeError as e:
-                logger.error(f"Type error: {e} in tool button configuration for {self.label}")
-            except Exception as e:
-                logger.error(f"Unexpected error initializing tool button for {self.label}: {e}")
+# Initialize polling
+poller = Poll_Buttons(buttons, rgbled_styles)
+poller.start_polling()
 
-    def initialize_voltage_sensor(self, volt_config):
-        if volt_config:
-            try:
-                self.voltage_sensor = Voltage_Sensor(volt_config, self.i2c, self.set_status)
-                logger.debug(f"Voltage sensor initialized for tool {self.label}")
-            except KeyError as e:
-                logger.error(f"Configuration error: missing key {e} in voltage sensor configuration for {self.label}")
-            except Exception as e:
-                logger.error(f"Unexpected error initializing voltage sensor for tool {self.label}: {e}")
-
-    def set_status(self, status):
-        if self.status != status:
-            self.status = status
-            logger.debug(f"Tool {self.label} status changed to {self.status}")
-
-# Example usage
-if __name__ == "__main__":
-    i2c = busio.I2C(board.SCL, board.SDA)
-
-    # Load the configuration from the config.json file
-    config_file = os.path.join(parent_dir, 'config.json')
-    with open(config_file, 'r') as f:
-        config = json.load(f)
-
-    styles_file = os.path.join(parent_dir, 'styles.json')
-
-    tools = [Tool(tool, i2c, styles_file) for tool in config['tools']]
-    try:
-        while True:
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        pass
+try:
+    while True:
+        # Main program can run other tasks here
+        time.sleep(1)
+except KeyboardInterrupt:
+    logger.info("Program interrupted by user")
