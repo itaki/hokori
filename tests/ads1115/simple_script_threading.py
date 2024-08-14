@@ -33,7 +33,7 @@ config = {
     }
 }
 
-class VoltageSensor:
+class Voltage_Sensor:
     def __init__(self, volt, sensor_detection_threshold=SENSOR_DETECTION_THRESHOLD, error_threshold=ERROR_THRESHOLD, min_readings=NUM_SAMPLES):
         self.label = volt.get('label', 'unknown')
         self.board_address = int(volt['voltage_address']['board_address'], 16)
@@ -51,6 +51,7 @@ class VoltageSensor:
 
         try:
             self.chan = AnalogIn(ADS.ADS1115(i2c, address=self.board_address), self.pin_number)
+            print(f"Type of self.chan: {type(self.chan)}")
             self.board_exists = True
             logger.info(f"Adding Voltage Sensor on pin {self.pin_number} on ADS1115 at address {hex(self.board_address)}")
             reading = self.get_reading()
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     i2c = busio.I2C(board.SCL, board.SDA)
 
     sensor_config = config["volt"]
-    voltage_sensor = VoltageSensor(sensor_config)
+    voltage_sensor = Voltage_Sensor(sensor_config)
 
     try:
         while True:

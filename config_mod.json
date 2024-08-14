@@ -4,15 +4,6 @@
     ],
     "boards": [
         {
-            "type": "Raspberry Pi GPIO",
-            "id": "pi_gpio",
-            "label": "Raspberry Pi on board GPIO",
-            "location": "Master Control",
-            "i2c_address": "",
-            "purpose": "General I/O"
-
-        },
-        {
             "type": "MCP23017",
             "id": "master_control_gpio_expander",
             "label": "GPIO Expander - Master Control",
@@ -66,7 +57,7 @@
                 "physical_location": "By the Hose",
                 "connection": {
                     "board": "master_control_gpio_expander",
-                    "pins": [0]
+                    "pin": 0
                 },
                 "led": {
                     "label": "Hose LED",
@@ -103,7 +94,7 @@
                 "version": "20 amp",
                 "connection": {
                     "board": "master_control_ad_converter",
-                    "pins": [0]
+                    "pin": 0
                 },
                 "multiplier": 3
             },
@@ -125,7 +116,7 @@
                 "physical_location": "Above the miter saw",
                 "connection": {
                     "board": "master_control_gpio_expander",
-                    "pins": [1]
+                    "pin": 1
                 },
                 "led": {
                     "label": "Left Miter Saw Button LED",
@@ -157,7 +148,7 @@
                 "physical_location": "Above the miter saw",
                 "connection": {
                     "board": "master_control_gpio_expander",
-                    "pins": [2]
+                    "pin": 2
                 },
                 "led": {
                     "label": "Right Miter Saw Button LED",
@@ -189,7 +180,7 @@
                 "physical_location": "Above the miter saw",
                 "connection": {
                     "board": "master_control_gpio_expander",
-                    "pins": [3]
+                    "pin": 3
                 },
                 "led": {
                     "label": "Floor Sweep Button LED",
@@ -205,11 +196,13 @@
             "volt": {},
             "keyboard_key": 0,
             "physical_location": ""
-        },
+        }
+    ],
+    "collectors": [
         {
-            "type": "tool",
+            "type": "dust_collector",
             "label": "Main Collector",
-            "id": "main_collector",
+            "id": "main-collector",
             "status": "off",
             "preferences": {
                 "spin_up_delay": 10,
@@ -219,11 +212,11 @@
             "relay": {
                 "label": "Main Collector Relay",
                 "id": "main_collector_relay",
-                "type": "collector_relay",
+                "type": "Relay",
                 "physical_location": "By the collector",
                 "connection": {
                     "board": "pi_gpio",
-                    "pins": [21]
+                    "pin": 21
                 }
             }
         }
