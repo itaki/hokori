@@ -1,3 +1,4 @@
+# Importing necessary modules
 import os
 import json
 import time
@@ -7,13 +8,20 @@ import sys
 import busio
 from devices.poll_buttons import Poll_Buttons
 from devices.tool import Tool
-from devices.dust_collector import Dust_Collector
 from devices.gate_manager import Gate_Manager
-from devices.hub import Hub
+from devices.dust_collector import Dust_Collector
 from utils.style_manager import Style_Manager
+from boards.mcp23017 import MCP23017
+from boards.pca9685 import PCA9685
+from boards.ads1115 import ADS1115
+from adafruit_ads1x15.ads1115 import ADS1115 as Adafruit_ADS1115
 
+# Configuring logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+# Configuration flag to control gate-related functionality
+USE_GATES = False
 
 # Load the configuration file
 config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -31,79 +39,91 @@ styles = style_manager.get_styles()
 # Initialize I2C bus
 i2c = busio.I2C(board.SCL, board.SDA)
 
-# Initialize hubs
-hubs = {}
-for hub_config in config.get('hubs', []):
+# Initialize boards
+boards = {}  # Change from list to dictionary
+for board_config in config.get('boards', []):
+    board_type = board_config['type']
+    board_id = board_config['id']
+
     try:
-        hub = Hub(hub_config, i2c)
-        hubs[hub_config['id']] = hub
+        if board_type == 'MCP23017':
+            boards[board_id] = MCP23017(i2c, board_config)
+        elif board_type == 'PCA9685':
+            boards[board_id] = PCA9685(i2c, board_config)
+        elif board_type == 'ADS1115':
+            # Use the Adafruit ADS1115 class to instantiate the ADS board
+            boards[board_id] = Adafruit_ADS1115(i2c, address=int(board_config['i2c_address'], 16))
+        elif board_type == 'Raspberry Pi GPIO':
+            boards[board_id] = "Raspberry Pi GPIO"  # Placeholder to represent GPIO
+        else:
+            logger.error(f"Unknown board type {board_type} for board {board_id}")
     except Exception as e:
-        logger.error(f"Failed to initialize hub {hub_config.get('label', 'unknown')}: {e}")
+      logger.error(f"Failed to initialize board {board_config.get('label', 'unknown')}: {e}")
 
 # Initialize tools
-tools = []
+tools = []  # Add an indented block to avoid the "Expected indented block" error
+collectors = []
+
+# Initialize tools and dust collectors
 for tool_config in config.get('tools', []):
-    hub_id = tool_config.get('button', {}).get('connection', {}).get('hub')
-    if hub_id and hub_id in hubs:
-        hub = hubs[hub_id]
-        try:
-            tool = Tool(tool_config, hub.gpio_expander, hub.pwm_led, styles, i2c)
-            if tool.button or tool.voltage_sensor:  # Only add the tool if it was initialized correctly
+    logger.debug(f"Attempting to initialize tool {tool_config['label']}.")
+    try:
+        mcp = boards.get(tool_config['button']['connection']['board'], None) if 'button' in tool_config and 'connection' in tool_config['button'] else None
+        pca_led = boards.get(tool_config['button']['led']['connection']['board'], None) if 'button' in tool_config and 'led' in tool_config['button'] and 'connection' in tool_config['button']['led'] else None
+        ads = boards.get(tool_config['volt']['connection']['board'], None) if 'volt' in tool_config and 'connection' in tool_config['volt'] else None
+        gpio = boards.get(tool_config['relay']['connection']['board'], None) if 'relay' in tool_config and 'connection' in tool_config['relay'] else None
+
+        # Determine if this is a dust collector or a regular tool
+        if 'relay' in tool_config and tool_config['relay'].get('type') == 'collector_relay':
+            print(tool_config)
+            collector = Dust_Collector(tool_config, tools)
+            collectors.append(collector)
+        else:
+            # Initialize the tool with the appropriate configurations
+            tool = Tool(tool_config, mcp, pca_led, ads, gpio, styles, i2c, boards)
+            
+            if tool.button or tool.voltage_sensor or tool.gpio_pin:
                 tools.append(tool)
             else:
                 logger.error(f"Tool {tool.label} skipped due to invalid configuration.")
-        except Exception as e:
-            logger.error(f"Failed to initialize tool {tool_config.get('label', 'unknown')}: {e}")
-    else:
-        logger.error(f"Hub {hub_id} not found for tool {tool_config['label']}. Skipping tool creation.")
+    except Exception as e:
+        logger.error(f"Failed to initialize tool {tool_config['label']}: {e}")
 
-# Initialize dust collectors
-dust_collectors = []
-for dc_config in config.get('collectors', []):
-    dust_collector = Dust_Collector(dc_config)
-    dust_collectors.append(dust_collector)
 
-# Initialize Gate Manager
-gate_manager = Gate_Manager()
+# Initialize Gate Manager if gates are in use
+if USE_GATES:
+    gate_manager = Gate_Manager(boards)  # Pass the boards dictionary to the Gate_Manager
 
 # Extract all buttons for polling
+# Initialize polling for buttons
 buttons = [tool.button for tool in tools if tool.button is not None]
-
-# Initialize polling
 poller = Poll_Buttons(buttons, styles['RGBLED_button_styles'])
 poller.start_polling()
 
 # Helper function to update gates based on current tool statuses
 def update_gates():
     active_tools = [tool for tool in tools if tool.status == 'on']
-    if active_tools:
+    if active_tools and gate_manager:
         gate_manager.set_gates({tool.id: tool for tool in active_tools})
 
 try:
     while True:
-        # We assume tools are updated in the background, so we only need to react to changes
         tool_states_changed = any(tool.status_changed for tool in tools)
-        
-        # If any tool status changed, update gates
-        if tool_states_changed:
+        if tool_states_changed and USE_GATES:
+            logger.debug("Detected a tool status change.")
             update_gates()
             for tool in tools:
-                tool.reset_status_changed()  # Reset the status changed flag after processing
+                logger.debug(f"Tool {tool.label} status: {tool.status}")
+                tool.reset_status_changed()
 
-        # Manage dust collectors
-        for dust_collector in dust_collectors:
-            dust_collector.manage_collector(tools)
-        
-        time.sleep(1)  # Adjust the sleep time as needed
+        time.sleep(1)
 except KeyboardInterrupt:
     logger.info("Program interrupted by user")
-    
-    # Cleanup resources gracefully
     poller.stop()
-    for dust_collector in dust_collectors:
-        dust_collector.cleanup()
     for tool in tools:
         if tool.voltage_sensor is not None:
             tool.voltage_sensor.stop()
+        if tool.gpio_pin is not None:
+            tool.cleanup()
 
     logger.info("All threads and resources cleaned up gracefully.")

@@ -13,13 +13,9 @@ BACKUP_DIR = os.path.join(BASE_DIR, '_BU')
 LOGS_DIR = os.path.join(BASE_DIR, 'logs')
 LOG_FILE = os.path.join(LOGS_DIR, 'gate_manager.log')
 
-# Ensure the logs directory exists
-if not os.path.exists(LOGS_DIR):
-    os.makedirs(LOGS_DIR)
-
-# Ensure the backup directory exists
-if not os.path.exists(BACKUP_DIR):
-    os.makedirs(BACKUP_DIR)
+# Ensure the logs and backup directories exist
+os.makedirs(LOGS_DIR, exist_ok=True)
+os.makedirs(BACKUP_DIR, exist_ok=True)
 
 # Set up logging
 logging.basicConfig(
@@ -33,9 +29,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class Gate:
-    def __init__(self, name, gate_info):
+    def __init__(self, name, gate_info, boards):
         self.name = name
-        self.address = int(gate_info['io_location']['address'], 16)
+        board_id = gate_info['io_location']['board']
+        self.board = boards.get(board_id)  # Retrieve the board instance from the boards dictionary
+
+        if self.board is None:
+            logger.error(f"Board with ID {board_id} for gate {self.name} not found in boards dictionary.")
+            raise ValueError(f"Board with ID {board_id} not found")
+
         self.pin = gate_info['io_location']['pin']
         self.min = gate_info['min']
         self.max = gate_info['max']
@@ -43,14 +45,16 @@ class Gate:
         self.previous_status = gate_info['status']  # Initialize with the current status
 
         try:
-            self.servo_kit = ServoKit(channels=16, address=self.address)
-            self.servo = self.servo_kit.servo[self.pin]
+            if hasattr(self.board, 'servo'):  # Check if this board is for servo control
+                self.servo = self.board.servo[self.pin]
+            else:
+                self.servo = None
+                logger.warning(f"Board {board_id} for gate {self.name} does not support servo control.")
             self.init_servo()
-            logger.debug(f"Gate {self.name} initialized on address {hex(self.address)} at pin {self.pin}")
+            logger.debug(f"Gate {self.name} initialized on board {board_id} at pin {self.pin}")
         except ValueError as e:
-            logger.error(f"Error initializing gate {self.name} at address {hex(self.address)}: {e}")
+            logger.error(f"Error initializing gate {self.name} at pin {self.pin}: {e}")
             logger.warning(f"Gate {self.name} will not be functional due to initialization failure.")
-            self.servo_kit = None
             self.servo = None
 
     def init_servo(self):
@@ -108,7 +112,8 @@ class Gate:
             self.stop_pwm()
 
 class Gate_Manager:
-    def __init__(self, gates_file=GATES_FILE, backup_dir=BACKUP_DIR):
+    def __init__(self, boards, gates_file=GATES_FILE, backup_dir=BACKUP_DIR):
+        self.boards = boards  # Store the boards dictionary
         self.gates_file = gates_file
         self.backup_dir = backup_dir
         self.gates = {}
@@ -143,12 +148,15 @@ class Gate_Manager:
         '''Builds Gate objects from the loaded gate data'''
         self.gates = {}
         for name, gate_info in self.gates_dict['gates'].items():
-            gate = Gate(name, gate_info)
-            if gate.servo:  # Only add the gate if it initialized successfully
-                self.gates[name] = gate
-                logger.debug(f'Gate {name} created with address {gate_info["io_location"]["address"]} and pin {gate_info["io_location"]["pin"]}')
-            else:
-                logger.warning(f'Gate {name} could not be initialized and will be skipped.')
+            try:
+                gate = Gate(name, gate_info, self.boards)  # Pass the boards dictionary to the Gate
+                if gate.servo:  # Only add the gate if it initialized successfully
+                    self.gates[name] = gate
+                    logger.debug(f'Gate {name} created with board {gate_info["io_location"]["board"]} and pin {gate_info["io_location"]["pin"]}')
+                else:
+                    logger.warning(f'Gate {name} could not be initialized and will be skipped.')
+            except ValueError as e:
+                logger.error(f"Failed to build gate {name}: {e}")
 
     def backup_gates(self):
         '''Backs up the gates configuration to a timestamped file in the backup directory'''
@@ -198,7 +206,7 @@ class Gate_Manager:
         '''Prints a list of all gates'''
         for gate_key, gate_info in self.gates_dict['gates'].items():
             logger.debug(f"Gate: {gate_key}, Physical Location: {gate_info['physical_location']}, Status: {gate_info['status']}, "
-          f"IO Location Address: {gate_info['io_location']['address']}, IO Location Pin: {gate_info['io_location']['pin']}, "
+          f"IO Location Board: {gate_info['io_location']['board']}, IO Location Pin: {gate_info['io_location']['pin']}, "
           f"Min: {gate_info['min']}, Max: {gate_info['max']}")
 
     def get_gate_settings(self, tools):
@@ -220,12 +228,3 @@ class Gate_Manager:
                 gate.open()
             else:
                 gate.close()
-
-# Load JSON data
-if __name__ == "__main__":
-    gm = Gate_Manager(GATES_FILE, BACKUP_DIR)
-    if gm.gates_dict:
-        gm.view_gates()
-        gm.test_gates()  # Test gates by cycling through min and max angles
-    else:
-        logger.error("Failed to load gates configuration")
