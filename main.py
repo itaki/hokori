@@ -13,15 +13,15 @@ from devices.dust_collector import Dust_Collector
 from utils.style_manager import Style_Manager
 from boards.mcp23017 import MCP23017
 from boards.pca9685 import PCA9685
-from boards.ads1115 import ADS1115
 from adafruit_ads1x15.ads1115 import ADS1115 as Adafruit_ADS1115
+import random
 
 # Configuring logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Configuration flag to control gate-related functionality
-USE_GATES = False
+USE_GATES = True
 
 # Load the configuration file
 config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -51,8 +51,8 @@ for board_config in config.get('boards', []):
         elif board_type == 'PCA9685':
             boards[board_id] = PCA9685(i2c, board_config)
         elif board_type == 'ADS1115':
-            # Use the Adafruit ADS1115 class to instantiate the ADS board
             boards[board_id] = Adafruit_ADS1115(i2c, address=int(board_config['i2c_address'], 16))
+            logger.info(f"Initialized ADS1115 at address {board_config['i2c_address']}")
         elif board_type == 'Raspberry Pi GPIO':
             boards[board_id] = "Raspberry Pi GPIO"  # Placeholder to represent GPIO
         else:
@@ -66,7 +66,7 @@ collectors = []
 
 # Initialize tools and dust collectors
 for tool_config in config.get('tools', []):
-    logger.debug(f"Attempting to initialize tool {tool_config['label']}.")
+    #logger.debug(f"Attempting to initialize tool {tool_config['label']}.")
     try:
         mcp = boards.get(tool_config['button']['connection']['board'], None) if 'button' in tool_config and 'connection' in tool_config['button'] else None
         pca_led = boards.get(tool_config['button']['led']['connection']['board'], None) if 'button' in tool_config and 'led' in tool_config['button'] and 'connection' in tool_config['button']['led'] else None
@@ -75,7 +75,6 @@ for tool_config in config.get('tools', []):
 
         # Determine if this is a dust collector or a regular tool
         if 'relay' in tool_config and tool_config['relay'].get('type') == 'collector_relay':
-            print(tool_config)
             collector = Dust_Collector(tool_config, tools)
             collectors.append(collector)
         else:

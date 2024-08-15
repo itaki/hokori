@@ -40,17 +40,15 @@ class Voltage_Sensor:
         try:
             self.chan = AnalogIn(self.ads, self.pin_number)  # Pass the ADS1115 instance to AnalogIn
             self.board_exists = True
-            logger.info(f"Adding Voltage Sensor on pin {self.pin_number} on ADS1115")
+            logger.debug(f"Adding Voltage Sensor on pin {self.pin_number} on ADS1115")
             reading = self.get_reading()
-            logger.info(f"Current voltage reading is {reading}")
+            logger.debug(f"Current voltage reading is {reading}")
             self.set_trigger_voltage()
             self.thread = threading.Thread(target=self.collect_readings)
             self.thread.start()
         except Exception as e:
             logger.error(f"Failed to initialize Voltage Sensor for {self.label}: {e}")
             self.board_exists = False
-
-        print(f"Type of self.chan: {type(self.chan)}")  # Should be <class 'adafruit_ads1x15.analog_in.AnalogIn'>
 
 
     def get_reading(self):
@@ -114,7 +112,7 @@ class Voltage_Sensor:
         reading = self.reading  # Use the already initialized self.reading
         if self.in_good_range():
             self.trigger = reading * TRIGGER_THRESHOLD
-            logger.info(f"Setting trigger point on pin {self.pin_number} to {self.trigger}")
+            logger.debug(f"Setting trigger point on pin {self.pin_number} to {self.trigger}")
 
     def update_status(self):
         status = "on" if self.am_i_on() else "off"

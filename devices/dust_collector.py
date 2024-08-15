@@ -20,11 +20,6 @@ class Dust_Collector:
             logger.error(f"Error in Dust_Collector setup: Missing key {e}")
             raise  # Re-raise the exception to be caught in main.py
 
-        logger.debug(f"Starting dust collector thread for {self.label}")
-        self.thread = threading.Thread(target=self.run, daemon=True)
-        self.thread.start()
-        logger.debug(f"Dust collector thread started for {self.label}")
-
         self.thread = threading.Thread(target=self.run, daemon=True)
         self.thread.start()
 

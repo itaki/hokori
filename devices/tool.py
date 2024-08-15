@@ -23,7 +23,7 @@ class Tool:
         self.button_status = 'off'
         try:
             if mcp and 'button' in tool_config:
-                logger.debug(f"Initializing button for tool {self.label} with config: {tool_config['button']}")
+                #logger.debug(f"Initializing button for tool {self.label} with config: {tool_config['button']}")
                 button_pins = tool_config['button']['connection']['pins']
                 led_pins = tool_config['button']['led']['connection']['pins'] if 'led' in tool_config['button'] else []
                 self.button = RGBLED_Button(tool_config['button'], mcp, pca, styles['RGBLED_button_styles'], self.update_status_from_button)
@@ -35,13 +35,11 @@ class Tool:
             raise
 
         # Initialize voltage sensor if available
-        # Initialize voltage sensor if available
         self.voltage_status = 'off'
         try:
             if ads and 'volt' in tool_config:
-                logger.debug(f"Initializing voltage sensor for tool {self.label} with config: {tool_config['volt']}")
+                #logger.debug(f"Initializing voltage sensor for tool {self.label} with config: {tool_config['volt']}")
                 self.voltage_sensor = Voltage_Sensor(tool_config['volt'], ads, self.update_status_from_voltage)
-                print(f"Voltage sensor: {self.voltage_sensor}")
             else:
                 self.voltage_sensor = None
                 #logger.warning(f"No voltage sensor configuration found for tool {self.label}")
@@ -54,7 +52,7 @@ class Tool:
         self.gpio_pin = None  # Initialize gpio_pin attribute
         try:
             if gpio and 'relay' in tool_config:
-                logger.debug(f"Initializing relay for tool {self.label} with config: {tool_config['relay']}")
+                #logger.debug(f"Initializing relay for tool {self.label} with config: {tool_config['relay']}")
                 relay_pins = tool_config['relay']['connection']['pins']
                 self.gpio_pin = relay_pins[0]  # Assume single pin for relay control
                 GPIO.setmode(GPIO.BCM)
@@ -68,7 +66,7 @@ class Tool:
             logger.error(f"Error initializing relay for tool {self.label}: {e}")
             raise
 
-        logger.debug(f"Tool {self.label} initialized successfully.")
+        logger.info(f"Tool {self.label} initialized successfully.")
 
     def run_relay(self):
         """Threaded function to manage the dust collector based on tool status."""
