@@ -4,8 +4,7 @@
             "physical_location": "By the Pi",
             "status": "closed",
             "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x42",
+                "board": "master_control_pwm_servo", 
                 "pin": 0
             },
             "min": 40,
@@ -16,7 +15,6 @@
             "status": "closed",
             "io_location": {
                 "board": "master_control_pwm_servo",
-                "address": "0x42",
                 "pin": 1
             },
             "min": 30,
@@ -27,7 +25,6 @@
             "status": "closed",
             "io_location": {
                 "board": "master_control_pwm_servo",
-                "address": "0x42",
                 "pin": 2
             },
             "min": 30,
@@ -38,131 +35,9 @@
             "status": "closed",
             "io_location": {
                 "board": "master_control_pwm_servo",
-                "address": "0x42",
                 "pin": 3
             },
             "min": 30,
-            "max": 150
-        },
-        "BandSaw": {
-            "physical_location": "BandSaw",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x42",
-                "pin": 15
-            },
-            "min": 60,
-            "max": 120
-        },
-        "FloorSweep": {
-            "physical_location": "FloorSweep",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x42",
-                "pin": 7
-            },
-            "min": 60,
-            "max": 120
-        },
-        "Corner_Branch": {
-            "physical_location": "Corner Branch",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x42",
-                "pin": 13
-            },
-            "min": 60,
-            "max": 120
-        },
-        "Vertical_Tube": {
-            "physical_location": "Vertical Tube",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x42",
-                "pin": 12
-            },
-            "min": 60,
-            "max": 120
-        },
-        "Island_Branch": {
-            "physical_location": "Island Branch",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x43",
-                "pin": 15
-            },
-            "min": 60,
-            "max": 120
-        },
-        "Island_Branch_Overhead_Arm": {
-            "physical_location": "Island Branch Overhead Arm",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x43",
-                "pin": 12
-            },
-            "min": 60,
-            "max": 120
-        },
-        "Table_Saw_Hood": {
-            "physical_location": "Table Saw Hood",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x43",
-                "pin": 8
-            },
-            "min": 80,
-            "max": 140
-        },
-        "Table_Saw_Main": {
-            "physical_location": "Table Saw Main",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x50",
-                "pin": 13
-            },
-            "min": 60,
-            "max": 120
-        },
-        "Router_Table": {
-            "physical_location": "Router Table",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x50",
-                "pin": 15
-            },
-            "min": 60,
-            "max": 120
-        },
-        "Sanding_Table": {
-            "physical_location": "Sanding Table",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x50",
-                "pin": 12
-            },
-            "min": 60,
-            "max": 120
-        },
-        "Planer": {
-            "physical_location": "Planer",
-            "status": "closed",
-            "io_location": {
-                "board": "master_control_pwm_servo",
-                "address": "0x50",
-                "pin": 14
-            },
-            "min": 60,
             "max": 150
         }
     }

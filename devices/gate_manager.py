@@ -1,6 +1,5 @@
 import json
 import logging
-from adafruit_servokit import ServoKit
 import os
 import time
 from datetime import datetime
@@ -32,84 +31,81 @@ class Gate:
     def __init__(self, name, gate_info, boards):
         self.name = name
         board_id = gate_info['io_location']['board']
-        self.board = boards.get(board_id)  # Retrieve the board instance from the boards dictionary
+        self.board = boards.get(board_id)
 
         if self.board is None:
             logger.error(f"Board with ID {board_id} for gate {self.name} not found in boards dictionary.")
             raise ValueError(f"Board with ID {board_id} not found")
 
         self.pin = gate_info['io_location']['pin']
-        self.min = gate_info['min']
-        self.max = gate_info['max']
+        self.min_angle = gate_info['min']
+        self.max_angle = gate_info['max']
         self.status = gate_info['status']
-        self.previous_status = gate_info['status']  # Initialize with the current status
+        self.previous_status = gate_info['status']
 
         try:
-            if hasattr(self.board, 'servo'):  # Check if this board is for servo control
-                self.servo = self.board.servo[self.pin]
+            if hasattr(self.board, 'set_servo_angle'):
+                self.init_servo()
+                logger.debug(f"Gate {self.name} initialized on board {board_id} at pin {self.pin}")
             else:
-                self.servo = None
                 logger.warning(f"Board {board_id} for gate {self.name} does not support servo control.")
-            self.init_servo()
-            logger.debug(f"Gate {self.name} initialized on board {board_id} at pin {self.pin}")
         except ValueError as e:
             logger.error(f"Error initializing gate {self.name} at pin {self.pin}: {e}")
             logger.warning(f"Gate {self.name} will not be functional due to initialization failure.")
-            self.servo = None
 
     def init_servo(self):
-        if self.servo:
-            try:
-                self.servo.set_pulse_width_range(1000, 2000)  # Set default pulse width range
-            except Exception as e:
-                logger.error(f"Failed to set pulse width range for gate {self.name}: {e}")
-                self.servo = None
+        # This method is intended to initialize the servo
+        logger.debug(f"Servo for gate {self.name} initialized with pin {self.pin}")
 
-    def start_pwm(self):
-        if self.servo:
-            pass  # Implement specific initialization needed for your servo here
+    def angle_to_pwm(self, angle):
+        """Convert a given angle (0-180) to a PWM value."""
+        min_pulse = 1000  # Minimum pulse width (in microseconds)
+        max_pulse = 2000  # Maximum pulse width (in microseconds)
+        pulse_range = max_pulse - min_pulse
+        angle_range = 180  # Full range of servo angles (typically 0-180 degrees)
 
-    def stop_pwm(self):
-        if self.servo:
-            self.servo.fraction = None  # This should turn off the PWM signal
+        pulse_width = min_pulse + (pulse_range * angle / angle_range)
+        return int((pulse_width * 65535) / (1000000 / self.board.pca.frequency))
 
     def open(self):
-        if self.servo and self.status != "open":
-            self.start_pwm()
-            self.servo.angle = self.max
-            time.sleep(0.5)  # Allow time for the servo to move
-            self.stop_pwm()
-            self.update_status("open")
-    
+        if self.status != "open":
+            try:
+                pwm_value = self.angle_to_pwm(self.max_angle)
+                self.board.set_pwm_value(self.pin, pwm_value)
+                time.sleep(0.5)  # Allow time for the servo to move
+                self.update_status("open")
+            except ValueError as e:
+                logger.error(f"Failed to open gate {self.name}: {e}")
+
     def close(self):
-        if self.servo and self.status != "closed":
-            self.start_pwm()
-            self.servo.angle = self.min
-            time.sleep(0.5)  # Allow time for the servo to move
-            self.stop_pwm()
-            self.update_status("closed")
-    
+        if self.status != "closed":
+            try:
+                pwm_value = self.angle_to_pwm(self.min_angle)
+                self.board.set_pwm_value(self.pin, pwm_value)
+                time.sleep(0.5)  # Allow time for the servo to move
+                self.update_status("closed")
+            except ValueError as e:
+                logger.error(f"Failed to close gate {self.name}: {e}")
+
     def update_status(self, new_status):
         if self.previous_status != new_status:
             self.previous_status = new_status
             self.status = new_status
             logger.info(f"Gate {self.name} {new_status}.")
-    
+
     def identify(self):
-        if self.servo:
-            self.start_pwm()
-            i = 0
-            while i < 20:
-                self.servo.angle = 80
-                time.sleep(.2)
-                self.servo.angle = 100
-                time.sleep(.2)
-                i += 1
+        if hasattr(self.board, 'set_pwm_value'):
+            for _ in range(20):
+                pwm_value_low = self.angle_to_pwm(80)
+                pwm_value_high = self.angle_to_pwm(100)
+                self.board.set_pwm_value(self.pin, pwm_value_low)
+                time.sleep(0.2)
+                self.board.set_pwm_value(self.pin, pwm_value_high)
+                time.sleep(0.2)
             if self.status == 'open':
                 self.open()
             else:
                 self.close()
-            self.stop_pwm()
 
 class Gate_Manager:
     def __init__(self, boards, gates_file=GATES_FILE, backup_dir=BACKUP_DIR):
@@ -124,9 +120,6 @@ class Gate_Manager:
 
     def load_gates(self):
         '''Loads gates from a JSON file'''
-        absolute_path = os.path.abspath(self.gates_file)
-        logger.debug(f"Attempting to load gates from {absolute_path}")
-        
         if os.path.exists(self.gates_file):
             logger.debug(f"Loading gates from {self.gates_file}")
             with open(self.gates_file, 'r') as f:
@@ -150,11 +143,8 @@ class Gate_Manager:
         for name, gate_info in self.gates_dict['gates'].items():
             try:
                 gate = Gate(name, gate_info, self.boards)  # Pass the boards dictionary to the Gate
-                if gate.servo:  # Only add the gate if it initialized successfully
-                    self.gates[name] = gate
-                    logger.debug(f'Gate {name} created with board {gate_info["io_location"]["board"]} and pin {gate_info["io_location"]["pin"]}')
-                else:
-                    logger.warning(f'Gate {name} could not be initialized and will be skipped.')
+                self.gates[name] = gate
+                logger.debug(f'Gate {name} created with board {gate_info["io_location"]["board"]} and pin {gate_info["io_location"]["pin"]}')
             except ValueError as e:
                 logger.error(f"Failed to build gate {name}: {e}")
 
@@ -206,8 +196,8 @@ class Gate_Manager:
         '''Prints a list of all gates'''
         for gate_key, gate_info in self.gates_dict['gates'].items():
             logger.debug(f"Gate: {gate_key}, Physical Location: {gate_info['physical_location']}, Status: {gate_info['status']}, "
-          f"IO Location Board: {gate_info['io_location']['board']}, IO Location Pin: {gate_info['io_location']['pin']}, "
-          f"Min: {gate_info['min']}, Max: {gate_info['max']}")
+                         f"IO Location Board: {gate_info['io_location']['board']}, IO Location Pin: {gate_info['io_location']['pin']}, "
+                         f"Min: {gate_info['min']}, Max: {gate_info['max']}")
 
     def get_gate_settings(self, tools):
         '''Get gate settings based on the tool status'''
