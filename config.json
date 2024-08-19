@@ -4,15 +4,6 @@
     ],
     "boards": [
         {
-            "type": "Raspberry Pi GPIO",
-            "id": "pi_gpio",
-            "label": "Raspberry Pi on board GPIO",
-            "location": "Master Control",
-            "i2c_address": "",
-            "purpose": "General I/O"
-
-        },
-        {
             "type": "MCP23017",
             "id": "master_control_gpio_expander",
             "label": "GPIO Expander - Master Control",
@@ -25,7 +16,7 @@
             "id": "master_control_pwm_servo",
             "label": "PWM Servo - Master Control",
             "location": "Master Control",
-            "i2c_address": "0x42",
+            "i2c_address": "0x41",
             "purpose": "Servo Control",
             "frequency": 50
         },
@@ -41,10 +32,70 @@
         {
             "type": "ADS1115",
             "id": "master_control_ad_converter",
-            "label": "ADC - Master Control",
+            "label": "Voltage Detector - Master Control",
             "location": "Master Control",
-            "i2c_address": "0x49",
+            "i2c_address": "0x48",
             "purpose": "Voltage Sensing"
+        },
+        {
+            "type": "MCP23017",
+            "id": "island_gpio_expander",
+            "label": "GPIO Expander - Island",
+            "location": "Center Island",
+            "i2c_address": "0x24",
+            "purpose": "Button Management"
+        },
+        {
+            "type": "PCA9685",
+            "id": "island_pwm_servo",
+            "label": "PWM Servo - Island",
+            "location": "Center Island",
+            "i2c_address": "0x50",
+            "purpose": "Servo Control",
+            "frequency": 50
+        },
+        {
+            "type": "PCA9685",
+            "id": "island_pwm_led",
+            "label": "PWM LED - Island",
+            "location": "Center Island",
+            "i2c_address": "0x4c",
+            "purpose": "LED Control",
+            "frequency": 1000
+        },
+        {
+            "type": "ADS1115",
+            "id": "island_ad_converter",
+            "label": "Voltage Detector - Island",
+            "location": "Center Island",
+            "i2c_address": "0x4a",
+            "purpose": "Voltage Sensing"
+        },
+        {
+            "type": "MCP23017",
+            "id": "everest_gpio_expander",
+            "label": "GPIO Expander - Everest",
+            "location": "Above the table saw",
+            "i2c_address": "0x21",
+            "purpose": "Button Management"
+        },
+        {
+            "type": "PCA9685",
+            "id": "everest_pwm_servo",
+            "label": "PWM Servo - Everest",
+            "location": "Above the table saw",
+            "i2c_address": "0x74",
+            "purpose": "Servo Control",
+            "frequency": 50
+        },
+        {
+            "type": "PCA9685",
+            "id": "everest_pwm_led",
+            "label": "PWM LED - Everest",
+            "location": "Above the table saw",
+            "i2c_address": "0x72",
+            "purpose": "LED Control",
+            "frequency": 1000
         }
     ],
     "tools": [
@@ -90,7 +141,7 @@
             "status": "off",
             "preferences": {
                 "use_collector": true,
-                "gate_prefs": ["MiterSaw_Gate"],
+                "gate_prefs": ["MiterSaw"],
                 "last_used": 0,
                 "spin_down_time": 10
             },
@@ -105,7 +156,7 @@
                     "board": "master_control_ad_converter",
                     "pins": [0]
                 },
-                "multiplier": 3
+                "multiplier": "1.003"
             },
             "keyboard_key": 50,
             "physical_location": ""
@@ -117,7 +168,7 @@
             "status": "off",
             "preferences": {
                 "use_collector": false,
-                "gate_prefs": ["MiterSaw_Left_Gate"]
+                "gate_prefs": ["MiterSaw_Left"]
             },
             "button": {
                 "type": "RGBLED_Button",
@@ -149,7 +200,7 @@
             "status": "off",
             "preferences": {
                 "use_collector": false,
-                "gate_prefs": ["MiterSaw_Right_Gate"]
+                "gate_prefs": ["MiterSaw_Right"]
             },
             "button": {
                 "type": "RGBLED_Button",
@@ -181,7 +232,7 @@
             "status": "off",
             "preferences": {
                 "use_collector": false,
-                "gate_prefs": ["FloorSweep_Gate"]
+                "gate_prefs": ["FloorSweep"]
             },
             "button": {
                 "type": "RGBLED_Button",
@@ -206,6 +257,114 @@
             "keyboard_key": 0,
             "physical_location": ""
         },
+        {
+            "type": "tool",
+            "label": "Band Saw",
+            "id": "band_saw",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["BandSaw", "Corner_Branch"],
+                "last_used": 0,
+                "spin_down_time": 10
+            },
+            "button": {
+                "physical_location": ""
+            },
+            "volt": {
+                "label": "VS for miter saw",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "connection": {
+                    "board": "master_control_ad_converter",
+                    "pins": [3]
+                },
+                "multiplier": "1.003"
+            },
+            "keyboard_key": 50,
+            "physical_location": ""
+        },
+        {
+            "type": "tool",
+            "label": "Drill Press",
+            "id": "drill_press",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["Corner_Branch", "Drill_Press"],
+                "last_used": 0,
+                "spin_down_time": 10
+            },
+            "button": {
+                "physical_location": ""
+            },
+            "volt": {
+                "label": "VS for miter saw",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "connection": {
+                    "board": "master_control_ad_converter",
+                    "pins": [1]
+                },
+                "multiplier": "1.008"
+            },
+            "keyboard_key": 50,
+            "physical_location": ""
+        },
+        {
+            "type": "tool",
+            "label": "Table Saw",
+            "id": "table_saw",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["Table_Saw_Main", "Black_Diamond", "Everest_Access"],
+                "last_used": 0,
+                "spin_down_time": 10
+            },
+            "button": {
+                "physical_location": ""
+            },
+            "volt": {
+                "label": "VS for miter saw",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "connection": {
+                    "board": "island_ad_converter",
+                    "pins": [0]
+                },
+                "multiplier": "1.008"
+            },
+            "keyboard_key": 50,
+            "physical_location": ""
+        },
+        {
+            "type": "tool",
+            "label": "Router Table",
+            "id": "router_table",
+            "status": "off",
+            "preferences": {
+                "use_collector": true,
+                "gate_prefs": ["Router", "Black_Diamond", "Everest_Access"],
+                "last_used": 0,
+                "spin_down_time": 10
+            },
+            "button": {
+                "physical_location": ""
+            },
+            "volt": {
+                "label": "VS for miter saw",
+                "type": "ADS1115",
+                "version": "20 amp",
+                "connection": {
+                    "board": "island_ad_converter",
+                    "pins": [0]
+                },
+                "multiplier": "1.008"
+            },
+            "keyboard_key": 50,
+            "physical_location": ""
+        },      
         {
             "type": "tool",
             "label": "Main Collector",

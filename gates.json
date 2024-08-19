@@ -1,27 +1,27 @@
 {
     "gates": {
-        "HOSE": {
+        "Everest_Access": {
             "physical_location": "By the Pi",
             "status": "closed",
             "io_location": {
-                "board": "master_control_pwm_servo", 
+                "board": "master_control_pwm_servo",
                 "pin": 0
             },
             "min": 40,
             "max": 130
         },
-        "MiterSaw_Gate": {
-            "physical_location": "Below the miter saw",
+        "HOSE": {
+            "physical_location": "By the Pi",
             "status": "closed",
             "io_location": {
                 "board": "master_control_pwm_servo",
                 "pin": 1
             },
-            "min": 30,
-            "max": 150
+            "min": 40,
+            "max": 130
         },
-        "MiterSaw_Left_Gate": {
-            "physical_location": "Below the miter saw to the left",
+        "MiterSaw": {
+            "physical_location": "Below the miter saw",
             "status": "closed",
             "io_location": {
                 "board": "master_control_pwm_servo",
@@ -30,7 +30,7 @@
             "min": 30,
             "max": 150
         },
-        "MiterSaw_Right_Gate": {
+        "MiterSaw_Left": {
             "physical_location": "Below the miter saw to the left",
             "status": "closed",
             "io_location": {
@@ -38,6 +38,126 @@
                 "pin": 3
             },
             "min": 30,
+            "max": 150
+        },
+        "MiterSaw_Right": {
+            "physical_location": "Below the miter saw to the left",
+            "status": "closed",
+            "io_location": {
+                "board": "master_control_pwm_servo",
+                "pin": 4
+            },
+            "min": 30,
+            "max": 150
+        },
+        "FloorSweep": {
+            "physical_location": "FloorSweep",
+            "status": "closed",
+            "io_location": {
+                "board": "master_control_pwm_servo",
+                "pin": 6
+            },
+            "min": 60,
+            "max": 120
+        },
+        "Corner_Branch": {
+            "physical_location": "Corner Branch",
+            "status": "closed",
+            "io_location": {
+                "board": "master_control_pwm_servo",
+                "pin": 7
+            },
+            "min": 60,
+            "max": 120
+        },
+        "BandSaw": {
+            "physical_location": "Below the BandSaw directly after the corner branch split",
+            "status": "closed",
+            "io_location": {
+                "board": "master_control_pwm_servo",
+                "pin": 5
+            },
+            "min": 60,
+            "max": 120
+        },
+        "Drill_Press": {
+            "physical_location": "Behind the drill press",
+            "status": "closed",
+            "io_location": {
+                "board": "master_control_pwm_servo",
+                "pin": 7
+            },
+            "min": 60,
+            "max": 120
+        },
+        "Black_Diamond": {
+            "physical_location": "Flexi pipe dropping out of the everest connection",
+            "status": "closed",
+            "io_location": {
+                "board": "everest_pwm_servo",
+                "pin": 0
+            },
+            "min": 60,
+            "max": 120
+        },
+        "Island_Branch_Overhead_Arm": {
+            "physical_location": "Island Branch overhead articulating arm",
+            "status": "closed",
+            "io_location": {
+                "board": "everest_pwm_servo",
+                "pin": 1
+            },
+            "min": 60,
+            "max": 120
+        },
+        "Table_Saw_Hood": {
+            "physical_location": "Table Saw Hood",
+            "status": "closed",
+            "io_location": {
+                "board": "everest_pwm_servo",
+                "pin": 2
+            },
+            "min": 80,
+            "max": 140
+        },
+        "Table_Saw_Main": {
+            "physical_location": "Behind the table saw",
+            "status": "closed",
+            "io_location": {
+                "board": "island_pwm_servo",
+                "pin": 1
+            },
+            "min": 60,
+            "max": 120
+        },
+        "Router_Table": {
+            "physical_location": "Attached to rear of table saw",
+            "status": "closed",
+            "io_location": {
+                "board": "island_pwm_servo",
+                "pin": 3
+            },
+            "min": 60,
+            "max": 120
+        },
+        "Sanding_Table": {
+            "physical_location": "Sanding Table",
+            "status": "closed",
+            "io_location": {
+                "board": "island_pwm_servo",
+                "pin": 4
+            },
+            "min": 60,
+            "max": 120
+        },
+        "Planer": {
+            "physical_location": "Attached to rear of table saw, first.",
+            "status": "closed",
+            "io_location": {
+                "board": "island_pwm_servo",
+                "pin": 0
+            },
+            "min": 60,
             "max": 150
         }
     }

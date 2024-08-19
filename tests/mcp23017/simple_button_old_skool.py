@@ -76,15 +76,15 @@ for config in button_configs:
         button.direction = Direction.INPUT
         button.pull = Pull.UP
         buttons.append((config['label'], button))
-        logger.debug(f"Button {config['label']} initialized at pin {pin}")
+        logger.debug(f"      🚥 🔵 Button {config['label']} initialized at pin {pin}")
     except Exception as e:
-        logger.error(f"Error initializing button {config['label']}: {e}")
+        logger.error(f"💢 Error initializing button {config['label']}: {e}")
 
 def poll_buttons():
     while True:
         for label, button in buttons:
             if not button.value:  # Button press detected
-                logger.debug(f"Button {label} pressed")
+                logger.debug(f"      🚥 🔵 Button {label} pressed")
                 print(f"Button {label} pressed")
                 time.sleep(0.5)  # Debounce delay
         time.sleep(0.1)  # Small delay to avoid busy-waiting

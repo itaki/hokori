@@ -25,7 +25,7 @@ config = {
         "type": "ADS1115",
         "version": "20 amp",
         "voltage_address": {
-            "board_address": "0x49",
+            "board_address": "0x48",
             "pin": 0
         },
         "multiplier": 3,
@@ -53,14 +53,14 @@ class Voltage_Sensor:
             self.chan = AnalogIn(ADS.ADS1115(i2c, address=self.board_address), self.pin_number)
             print(f"Type of self.chan: {type(self.chan)}")
             self.board_exists = True
-            logger.info(f"Adding Voltage Sensor on pin {self.pin_number} on ADS1115 at address {hex(self.board_address)}")
+            logger.info(f"     🔮 Adding Voltage Sensor on pin {self.pin_number} on ADS1115 at address {hex(self.board_address)}")
             reading = self.get_reading()
-            logger.info(f"Current voltage reading is {reading}")
+            logger.info(f"     🔮 Current voltage reading is {reading}")
             self.set_trigger_voltage()
             self.thread = threading.Thread(target=self.collect_readings)
             self.thread.start()
         except Exception as e:
-            logger.error(f"ADS1115 not found at {hex(self.board_address)}. Cannot create voltage sensor")
+            logger.error(f"💢 ADS1115 not found at {hex(self.board_address)}. Cannot create voltage sensor")
             self.board_exists = False
             logger.exception(e)
 
@@ -90,9 +90,9 @@ class Voltage_Sensor:
         elif not self.error_raised:
             self.error_raised = True
             if self.sensor_detection_threshold > self.reading:
-                logger.warning(f"No sensor on pin {self.pin_number} at address {hex(self.board_address)}")
+                logger.warning(f"🌟 No sensor on pin {self.pin_number} at address {hex(self.board_address)}")
             if self.reading > self.error_threshold:
-                logger.warning(f"Problem with sensor on pin {self.pin_number} at address {hex(self.board_address)}")
+                logger.warning(f"🌟 Problem with sensor on pin {self.pin_number} at address {hex(self.board_address)}")
         self.sensor_exists = False
         return False
 
@@ -113,7 +113,7 @@ class Voltage_Sensor:
         reading = self.reading
         if self.in_good_range():
             self.trigger = reading * TRIGGER_THRESHOLD
-            logger.info(f"Setting trigger point on pin {self.pin_number} at address {hex(self.board_address)} to {self.trigger}")
+            logger.info(f"     🔮 Setting trigger point on pin {self.pin_number} at address {hex(self.board_address)} to {self.trigger}")
 
     def stop(self):
         self._stop_thread = True
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         while True:
             is_on = voltage_sensor.am_i_on()
             status = "ON" if is_on else "OFF"
-            logger.info(f"Tool is {status}")
+            logger.info(f"     🔮 Tool is {status}")
             time.sleep(0.001)  # Reduced delay to make it run faster
     except KeyboardInterrupt:
         voltage_sensor.stop()

@@ -12,16 +12,16 @@ class Style_Manager:
 
     def load_styles(self):
         if not os.path.exists(self.styles_path):
-            logger.error(f"Styles file not found: {self.styles_path}")
+            logger.error(f"💢 Styles file not found: {self.styles_path}")
             return self.default_styles()
 
         try:
             with open(self.styles_path, 'r') as f:
                 return json.load(f)
         except json.JSONDecodeError as e:
-            logger.error(f"JSON decode error in styles file: {e}")
+            logger.error(f"💢 JSON decode error in styles file: {e}")
         except Exception as e:
-            logger.error(f"Failed to load styles: {e}")
+            logger.error(f"💢 Failed to load styles: {e}")
 
         return self.default_styles()
 

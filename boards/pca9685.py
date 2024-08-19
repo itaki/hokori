@@ -14,11 +14,11 @@ class PCA9685:
         if self.mode == 'Servo Control':
             frequency = config.get('frequency', 50)  # 50Hz is typical for servo control
             self.set_frequency(frequency)
-            logger.info(f"Initialized PCA9685 at address {hex(self.i2c_address)} in Servo Control mode with frequency {frequency}Hz")
+            logger.info(f"     🔮 Initialized PCA9685 at address {hex(self.i2c_address)} in Servo Control mode with frequency {frequency}Hz as board ID {config['id']}")
         else:
             frequency = config.get('frequency', 1000)  # 1000Hz is typical for LED control
             self.set_frequency(frequency)
-            logger.info(f"Initialized PCA9685 at address {hex(self.i2c_address)} in LED Control mode with frequency {frequency}Hz")
+            logger.info(f"     🔮 Initialized PCA9685 at address {hex(self.i2c_address)} in LED Control mode with frequency {frequency}Hz as board ID {config['id']}")
 
     @property
     def channels(self):
