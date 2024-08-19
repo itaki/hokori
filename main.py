@@ -26,7 +26,7 @@ USE_GATES = True
 # Load the configuration file
 config_path = os.path.join(os.path.dirname(__file__), 'config.json')
 if not os.path.exists(config_path):
-    logger.error(f"Configuration file not found at {config_path}. Exiting.")
+    logger.error(f"💢 Configuration file not found at {config_path}. Exiting.")
     sys.exit(1)
 
 with open(config_path, 'r') as config_file:
@@ -52,13 +52,13 @@ for board_config in config.get('boards', []):
             boards[board_id] = PCA9685(i2c, board_config)
         elif board_type == 'ADS1115':
             boards[board_id] = Adafruit_ADS1115(i2c, address=int(board_config['i2c_address'], 16))
-            logger.info(f"Initialized ADS1115 at address {board_config['i2c_address']}")
+            logger.info(f"     🔮 Initialized ADS1115 at address {board_config['i2c_address']} ans board ID {board_id}")
         elif board_type == 'Raspberry Pi GPIO':
             boards[board_id] = "Raspberry Pi GPIO"  # Placeholder to represent GPIO
         else:
-            logger.error(f"Unknown board type {board_type} for board {board_id}")
+            logger.error(f"💢 Unknown board type {board_type} for board {board_id}")
     except Exception as e:
-      logger.error(f"Failed to initialize board {board_config.get('label', 'unknown')}: {e}")
+      logger.error(f"💢 Failed to initialize board {board_config.get('label', 'unknown')}: {e}")
 
 # Initialize tools
 tools = []  # Add an indented block to avoid the "Expected indented block" error
@@ -66,7 +66,7 @@ collectors = []
 
 # Initialize tools and dust collectors
 for tool_config in config.get('tools', []):
-    #logger.debug(f"Attempting to initialize tool {tool_config['label']}.")
+    #logger.debug(f"� Attempting to initialize tool {tool_config['label']}.")
     try:
         mcp = boards.get(tool_config['button']['connection']['board'], None) if 'button' in tool_config and 'connection' in tool_config['button'] else None
         pca_led = boards.get(tool_config['button']['led']['connection']['board'], None) if 'button' in tool_config and 'led' in tool_config['button'] and 'connection' in tool_config['button']['led'] else None
@@ -84,9 +84,9 @@ for tool_config in config.get('tools', []):
             if tool.button or tool.voltage_sensor or tool.gpio_pin:
                 tools.append(tool)
             else:
-                logger.error(f"Tool {tool.label} skipped due to invalid configuration.")
+                logger.error(f"💢 Tool {tool.label} skipped due to invalid configuration.")
     except Exception as e:
-        logger.error(f"Failed to initialize tool {tool_config['label']}: {e}")
+        logger.error(f"💢 Failed to initialize tool {tool_config['label']}: {e}")
 
 
 # Initialize Gate Manager if gates are in use
@@ -112,7 +112,7 @@ try:
             logger.debug("Detected a tool status change.")
             update_gates()
             for tool in tools:
-                logger.debug(f"Tool {tool.label} status: {tool.status}")
+                logger.debug(f"� Tool {tool.label} status: {tool.status}")
                 tool.reset_status_changed()
 
         time.sleep(1)
@@ -124,5 +124,9 @@ except KeyboardInterrupt:
             tool.voltage_sensor.stop()
         if tool.gpio_pin is not None:
             tool.cleanup()
+
+    # Cleanup dust collectors
+    for collector in collectors:
+        collector.cleanup()
 
     logger.info("All threads and resources cleaned up gracefully.")

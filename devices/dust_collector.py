@@ -17,7 +17,7 @@ class Dust_Collector:
         try:
             self.setup_relay(collector_config)
         except KeyError as e:
-            logger.error(f"Error in Dust_Collector setup: Missing key {e}")
+            logger.error(f"💢  💨 Error in Dust_Collector setup: Missing key {e}")
             raise  # Re-raise the exception to be caught in main.py
 
         self.thread = threading.Thread(target=self.run, daemon=True)
@@ -25,30 +25,30 @@ class Dust_Collector:
 
     def setup_relay(self, collector_config):
         relay_conn = collector_config.get('relay', {}).get('connection', {})
-        logger.debug(f"Setting up relay for {self.label} with config: {relay_conn}")
-        self.gpio_pin = relay_conn.get('pins', [21])[0]  # Assuming 'pins' is a list; take the first pin
+        logger.debug(f"      🚥 💨 Setting up relay for {self.label} with config: {relay_conn}")
+        self.gpio_pin = relay_conn.get('pins', [40])[0]  # Assuming 'pins' is a list; take the first pin
         if not self.gpio_pin:
             raise KeyError("pin")
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.gpio_pin, GPIO.OUT, initial=GPIO.LOW)
-        logger.debug(f"GPIO pin {self.gpio_pin} set up for dust collector {self.label}")
+        logger.debug(f"      🚥 💨 GPIO pin {self.gpio_pin} set up for dust collector {self.label}")
 
     def turn_on(self):
         if self.status != 'on':
             self.status = 'on'
-            logger.info(f"Dust collector {self.label} turned on.")
+            logger.info(f"     🔮 💨 Dust collector {self.label} turned on 💫")
             if self.gpio_pin is not None:
                 GPIO.output(self.gpio_pin, GPIO.HIGH)
-                logger.debug(f"GPIO pin {self.gpio_pin} activated for dust collector {self.label}")
+                #logger.debug(f"      🚥 💨 GPIO pin {self.gpio_pin} activated for dust collector {self.label}")
 
     def turn_off(self):
         if self.status != 'off':
             self.status = 'off'
-            logger.info(f"Dust collector {self.label} turned off.")
+            logger.info(f"     🔮 💨 Dust collector {self.label} turned off 💤")
             if self.gpio_pin is not None:
                 GPIO.output(self.gpio_pin, GPIO.LOW)
-                logger.debug(f"GPIO pin {self.gpio_pin} deactivated for dust collector {self.label}")
+                #logger.debug(f"      🚥 💨 GPIO pin {self.gpio_pin} deactivated for dust collector {self.label}")
 
     def run(self):
         """Main loop to manage the dust collector based on tool statuses."""
@@ -68,7 +68,7 @@ class Dust_Collector:
         if any_tool_on:
             self.turn_on()
         elif self.status == 'on':
-            logger.info(f"Dust collector {self.label} will spin down in {max_spin_down_time} seconds.")
+            logger.info(f"     🔮 💨 Dust collector {self.label} will spin down in {max_spin_down_time} seconds.")
             time.sleep(max_spin_down_time)
             self.turn_off()
 
@@ -79,4 +79,6 @@ class Dust_Collector:
         if self.gpio_pin is not None:
             GPIO.output(self.gpio_pin, GPIO.LOW)
             GPIO.cleanup(self.gpio_pin)
-            logger.debug(f"Cleaned up GPIO pin for dust collector {self.label}")
+            logger.debug(f"      🚥 💨 Cleaned up GPIO pin for dust collector {self.label}")
+
+

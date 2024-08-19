@@ -26,8 +26,8 @@ class RGBLED_Button:
         else:
             led_pins = config.get('led', {}).get('connection', {}).get('pins', [])
             if len(led_pins) < 3:
-                logger.error(f"Insufficient LED pins provided for {self.label}. Expected 3, got {len(led_pins)}.")
-                raise ValueError(f"Invalid LED pin configuration for {self.label}")
+                logger.error(f"💢 Insufficient LED pins provided for {self.label}. Expected 3, got {len(led_pins)}.")
+                raise Valueerror(f"💢 Invalid LED pin configuration for {self.label}")
             else:
                 self.leds = [pca.channels[pin] for pin in led_pins]
 
@@ -35,9 +35,9 @@ class RGBLED_Button:
         if self.leds:
             initial_color = self.rgbled_styles["RGBLED_on_color"] if self.state else self.rgbled_styles["RGBLED_off_color"]
             self.set_led_color(initial_color)
-            logger.debug(f"Button {self.label} initialized at pin {pin} with LEDs at pins {led_pins} (set to {'ON' if self.state else 'OFF'})")
+            logger.debug(f"      🚥 🔵 Button {self.label} initialized at pin {pin} with LEDs at pins {led_pins} (set to {'ON' if self.state else 'OFF'})")
         else:
-            logger.debug(f"Button {self.label} initialized at pin {pin} without valid LEDs configuration.")
+            logger.debug(f"      🚥 🔵 Button {self.label} initialized at pin {pin} without valid LEDs configuration.")
 
 
     def set_led_color(self, color):
@@ -59,4 +59,4 @@ class RGBLED_Button:
             self.status_callback(new_status)
         
         state_str = "ON" if self.state else "OFF"
-        logger.debug(f"Button {self.label} toggled to {state_str}")
+        logger.debug(f"      🚥 🔵 Button {self.label} toggled to {state_str}")

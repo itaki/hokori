@@ -9,7 +9,7 @@ class MCP23017:
         self.i2c_address = int(config['i2c_address'], 16)
         self.mcp = Adafruit_MCP23017(i2c, address=self.i2c_address)
         self.pins = [self.mcp.get_pin(i) for i in range(16)]  # MCP23017 has 16 GPIO pins (0-15)
-        logger.info(f"Initialized MCP23017 at address {hex(self.i2c_address)}")
+        logger.info(f"     🔮 Initialized MCP23017 at address {hex(self.i2c_address)} as board ID {config['id']}")
 
     def get_pin(self, pin_number):
         """Returns the pin object for the given pin number."""
