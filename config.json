@@ -156,7 +156,7 @@
                     "board": "master_control_ad_converter",
                     "pins": [0]
                 },
-                "multiplier": "1.003"
+                "multiplier": "12"
             },
             "keyboard_key": 50,
             "physical_location": ""
@@ -279,7 +279,7 @@
                     "board": "master_control_ad_converter",
                     "pins": [3]
                 },
-                "multiplier": "1.003"
+                "multiplier": "12"
             },
             "keyboard_key": 50,
             "physical_location": ""
@@ -306,7 +306,7 @@
                     "board": "master_control_ad_converter",
                     "pins": [1]
                 },
-                "multiplier": "1.008"
+                "multiplier": "12"
             },
             "keyboard_key": 50,
             "physical_location": ""
@@ -333,7 +333,7 @@
                     "board": "island_ad_converter",
                     "pins": [0]
                 },
-                "multiplier": "1.008"
+                "multiplier": "12"
             },
             "keyboard_key": 50,
             "physical_location": ""
@@ -360,7 +360,7 @@
                     "board": "island_ad_converter",
                     "pins": [0]
                 },
-                "multiplier": "1.008"
+                "multiplier": "12"
             },
             "keyboard_key": 50,
             "physical_location": ""
