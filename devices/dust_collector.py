@@ -73,12 +73,15 @@ class Dust_Collector:
             self.turn_off()
 
     def cleanup(self):
+        logger.info(f"Stopping dust collector {self.label}")
         self.stop_event.set()  # Signal the thread to stop
-        self.thread.join()  # Wait for the thread to finish
+        self.thread.join(timeout=5)  # Wait for the thread to finish with a timeout
+        logger.info(f"Dust collector {self.label} thread stopped")
 
         if self.gpio_pin is not None:
             GPIO.output(self.gpio_pin, GPIO.LOW)
             GPIO.cleanup(self.gpio_pin)
-            logger.debug(f"      🚥 💨 Cleaned up GPIO pin for dust collector {self.label}")
+            logger.info(f"Cleaned up GPIO pin for dust collector {self.label}")
+
 
 
