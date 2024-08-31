@@ -46,13 +46,11 @@ class Gate:
         try:
             if hasattr(self.board, 'set_servo_angle'):
                 pass
-                #logger.debug(f"      🚥 ⛩️  Gate {self.name} initialized on board {board_id} at pin {self.pin}")
             else:
                 logger.warning(f"🌟 Board {board_id} for gate {self.name} does not support servo control.")
         except ValueError as e:
             logger.error(f"💢 Error initializing gate {self.name} at pin {self.pin}: {e}")
             logger.warning(f"🌟 Gate {self.name} will not be functional due to initialization failure.")
-
 
     def angle_to_pwm(self, angle):
         """Convert a given angle (0-180) to a PWM value."""
@@ -64,25 +62,29 @@ class Gate:
         pulse_width = min_pulse + (pulse_range * angle / angle_range)
         return int((pulse_width * 65535) / (1000000 / self.board.pca.frequency))
 
+    def stop_servo(self):
+        """Stop sending PWM signal to the servo, effectively turning it off."""
+        self.board.set_pwm_value(self.pin, 0)
+        logger.debug(f"🔌 Servo on pin {self.pin} has been turned off.")
+
     def open(self):
-        if self.status != "open":
-            try:
-                pwm_value = self.angle_to_pwm(self.max_angle)
-                self.board.set_pwm_value(self.pin, pwm_value)
-                time.sleep(0.5)  # Allow time for the servo to move
-                self.update_status("open")
-            except ValueError as e:
-                logger.error(f"💢 Failed to open gate {self.name}: {e}")
+
+        try:
+            pwm_value = self.angle_to_pwm(self.max_angle)
+            self.board.set_pwm_value(self.pin, pwm_value)
+            self.update_status("open")
+        except ValueError as e:
+            logger.error(f"💢 Failed to open gate {self.name}: {e}")
 
     def close(self):
-        if self.status != "closed":
-            try:
-                pwm_value = self.angle_to_pwm(self.min_angle)
-                self.board.set_pwm_value(self.pin, pwm_value)
-                time.sleep(0.5)  # Allow time for the servo to move
-                self.update_status("closed")
-            except ValueError as e:
-                logger.error(f"💢 Failed to close gate {self.name}: {e}")
+
+        try:
+            logger.debug(f'      🚥 ⛩️  Closing {self.name}')
+            pwm_value = self.angle_to_pwm(self.min_angle)
+            self.board.set_pwm_value(self.pin, pwm_value)
+            self.update_status("closed")
+        except ValueError as e:
+            logger.error(f"💢 Failed to close gate {self.name}: {e}")
 
     def update_status(self, new_status):
         if self.previous_status != new_status:
@@ -104,6 +106,7 @@ class Gate:
             else:
                 self.close()
 
+
 class Gate_Manager:
     def __init__(self, boards, gates_file=GATES_FILE, backup_dir=BACKUP_DIR):
         self.boards = boards  # Store the boards dictionary
@@ -112,8 +115,10 @@ class Gate_Manager:
         self.gates = {}
         self.gates_dict = self.load_gates()
         if self.gates_dict:
+            logger.debug(f'      🚥 ⛩️ Building gates') 
             self.build_gates()
-            self.close_all_gates()  # Close all gates on initialization
+            # logger.debug(f'      🚥 ⛩️  Setting all gates')
+            # self.set_gates()  # Set all gates to their initial positions
 
     def load_gates(self):
         '''Loads gates from a JSON file'''
@@ -125,7 +130,7 @@ class Gate_Manager:
                     if "gates" in gates_dict:
                         return gates_dict
                     else:
-                        logger.error("Invalid gate file structure: 'gates' key not found")
+                        logger.error("💢 Invalid gate file structure: 'gates' key not found")
                         return None
                 except json.JSONDecodeError as e:
                     logger.error(f"💢 Error decoding JSON from gate file: {e}")
@@ -173,7 +178,8 @@ class Gate_Manager:
     def close_all_gates(self):
         '''Close all gates'''
         for gate in self.gates.values():
-            gate.close()
+            logger.debug(f'      🚥 ⛩️ Sending request to close {gate.name}')
+            self.close_gate(gate.name)
 
     def open_gate(self, name):
         '''Open a single gate by name'''
@@ -185,6 +191,7 @@ class Gate_Manager:
     def close_gate(self, name):
         '''Close a single gate by name'''
         if name in self.gates:
+            logger.debug(f'      🚥 ⛩️  Gate manager send a request to gate {name} to close')
             self.gates[name].close()
         else:
             logger.debug(f"      🚥 ⛩️  Gate {name} not found.")
@@ -199,8 +206,8 @@ class Gate_Manager:
     def get_gate_settings(self, tools):
         '''Get gate settings based on the tool status'''
         open_gates = []
-        for t in tools:
-            current_tool = tools[t]
+        for current_tool in tools:
+
             if current_tool.status != 'off':
                 for gate_pref in current_tool.gate_prefs:
                     if gate_pref in self.gates and gate_pref not in open_gates:
@@ -210,8 +217,13 @@ class Gate_Manager:
     def set_gates(self, tools):
         '''Set gates based on tool preferences'''
         open_gates = self.get_gate_settings(tools)
+        print(open_gates)
         for gate_name, gate in self.gates.items():
             if gate_name in open_gates:
                 gate.open()
             else:
                 gate.close()
+
+        time.sleep(0.5)
+        for gate_name, gate in self.gates.items():  # pause before shutting off al servos
+            gate.stop_servo()

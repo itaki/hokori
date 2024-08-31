@@ -72,19 +72,11 @@
             "purpose": "Voltage Sensing"
         },
         {
-            "type": "MCP23017",
-            "id": "everest_gpio_expander",
-            "label": "GPIO Expander - Everest",
-            "location": "Above the table saw",
-            "i2c_address": "0x21",
-            "purpose": "Button Management"
-        },
-        {
             "type": "PCA9685",
             "id": "everest_pwm_servo",
             "label": "PWM Servo - Everest",
             "location": "Above the table saw",
-            "i2c_address": "0x74",
+            "i2c_address": "0x72",
             "purpose": "Servo Control",
             "frequency": 50
         },
@@ -93,7 +85,7 @@
             "id": "everest_pwm_led",
             "label": "PWM LED - Everest",
             "location": "Above the table saw",
-            "i2c_address": "0x72",
+            "i2c_address": "0x74",
             "purpose": "LED Control",
             "frequency": 1000
         }
@@ -106,7 +98,7 @@
             "status": "off",
             "preferences": {
                 "use_collector": true,
-                "gate_prefs": ["HOSE"],
+                "gate_prefs": ["HOSE", "Corner_Branch"],
                 "last_used": 0,
                 "spin_down_time": 5
             },
@@ -149,26 +141,26 @@
                 "physical_location": ""
             },
             "volt": {
-                "label": "VS for miter saw",
+                "label": "VS for Miter Saw",
                 "type": "ADS1115",
                 "version": "20 amp",
                 "connection": {
                     "board": "master_control_ad_converter",
                     "pins": [0]
                 },
-                "multiplier": "12"
+                "deviation": "1.04"
             },
             "keyboard_key": 50,
             "physical_location": ""
         },
         {
             "type": "tool",
-            "label": "LEFT Miter Saw Button",
+            "label": "Overhead -old LEFT Miter Saw Button -",
             "id": "left_miter_saw_button",
             "status": "off",
             "preferences": {
-                "use_collector": false,
-                "gate_prefs": ["MiterSaw_Left"]
+                "use_collector": true,
+                "gate_prefs": ["Everest_Access","Island_Branch_Overhead_Arm"]
             },
             "button": {
                 "type": "RGBLED_Button",
@@ -272,14 +264,14 @@
                 "physical_location": ""
             },
             "volt": {
-                "label": "VS for miter saw",
+                "label": "VS for Band Saw",
                 "type": "ADS1115",
                 "version": "20 amp",
                 "connection": {
                     "board": "master_control_ad_converter",
                     "pins": [3]
                 },
-                "multiplier": "12"
+                "deviation": "1.04"
             },
             "keyboard_key": 50,
             "physical_location": ""
@@ -299,14 +291,14 @@
                 "physical_location": ""
             },
             "volt": {
-                "label": "VS for miter saw",
+                "label": "VS for Drill Press",
                 "type": "ADS1115",
                 "version": "20 amp",
                 "connection": {
                     "board": "master_control_ad_converter",
                     "pins": [1]
                 },
-                "multiplier": "12"
+                "deviation": "1.03"
             },
             "keyboard_key": 50,
             "physical_location": ""
@@ -326,14 +318,14 @@
                 "physical_location": ""
             },
             "volt": {
-                "label": "VS for miter saw",
+                "label": "VS for Table Saw",
                 "type": "ADS1115",
                 "version": "20 amp",
                 "connection": {
                     "board": "island_ad_converter",
                     "pins": [0]
                 },
-                "multiplier": "12"
+                "deviation": "1.05"
             },
             "keyboard_key": 50,
             "physical_location": ""
@@ -353,14 +345,14 @@
                 "physical_location": ""
             },
             "volt": {
-                "label": "VS for miter saw",
+                "label": "VS for Router Table",
                 "type": "ADS1115",
                 "version": "20 amp",
                 "connection": {
                     "board": "island_ad_converter",
-                    "pins": [0]
+                    "pins": [1]
                 },
-                "multiplier": "12"
+                "deviation": "1.04"
             },
             "keyboard_key": 50,
             "physical_location": ""

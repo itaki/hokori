@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 
 # Configuration flag to control gate-related functionality
 USE_GATES = True
+USE_VOLT_SENSORS = True
+USE_BUTTONS = True
+USE_COLLECTORS = True
+USE_GUI = False
 
 # Load the configuration file
 config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -52,7 +56,7 @@ for board_config in config.get('boards', []):
             boards[board_id] = PCA9685(i2c, board_config)
         elif board_type == 'ADS1115':
             boards[board_id] = Adafruit_ADS1115(i2c, address=int(board_config['i2c_address'], 16))
-            logger.info(f"     🔮 Initialized ADS1115 at address {board_config['i2c_address']} ans board ID {board_id}")
+            logger.info(f"     🔮 Initialized ADS1115 at address {board_config['i2c_address']} and board ID {board_id}")
         elif board_type == 'Raspberry Pi GPIO':
             boards[board_id] = "Raspberry Pi GPIO"  # Placeholder to represent GPIO
         else:
@@ -61,16 +65,18 @@ for board_config in config.get('boards', []):
       logger.error(f"💢 Failed to initialize board {board_config.get('label', 'unknown')}: {e}")
 
 # Initialize tools
-tools = []  # Add an indented block to avoid the "Expected indented block" error
+tools = []
 collectors = []
 
 # Initialize tools and dust collectors
 for tool_config in config.get('tools', []):
-    #logger.debug(f"� Attempting to initialize tool {tool_config['label']}.")
     try:
         mcp = boards.get(tool_config['button']['connection']['board'], None) if 'button' in tool_config and 'connection' in tool_config['button'] else None
         pca_led = boards.get(tool_config['button']['led']['connection']['board'], None) if 'button' in tool_config and 'led' in tool_config['button'] and 'connection' in tool_config['button']['led'] else None
-        ads = boards.get(tool_config['volt']['connection']['board'], None) if 'volt' in tool_config and 'connection' in tool_config['volt'] else None
+        if USE_VOLT_SENSORS:
+            ads = boards.get(tool_config['volt']['connection']['board'], None) if 'volt' in tool_config and 'connection' in tool_config['volt'] else None
+        else:
+            logger.info("🔌 Voltage sensors disabled.")
         gpio = boards.get(tool_config['relay']['connection']['board'], None) if 'relay' in tool_config and 'connection' in tool_config['relay'] else None
 
         # Determine if this is a dust collector or a regular tool
@@ -99,34 +105,48 @@ buttons = [tool.button for tool in tools if tool.button is not None]
 poller = Poll_Buttons(buttons, styles['RGBLED_button_styles'])
 poller.start_polling()
 
-# Helper function to update gates based on current tool statuses
-def update_gates():
-    active_tools = [tool for tool in tools if tool.status == 'on']
-    if active_tools and gate_manager:
-        gate_manager.set_gates({tool.id: tool for tool in active_tools})
-
 try:
     while True:
         tool_states_changed = any(tool.status_changed for tool in tools)
-        if tool_states_changed and USE_GATES:
+        if tool_states_changed:
             logger.debug("Detected a tool status change.")
-            update_gates()
+            if USE_GATES:
+                gate_manager.set_gates(tools)
             for tool in tools:
-                logger.debug(f"� Tool {tool.label} status: {tool.status}")
+                logger.debug(f"🌑 Tool {tool.label} status: {tool.status}")
                 tool.reset_status_changed()
 
         time.sleep(1)
+        print(f'running at {time.time()}', end='\r')
 except KeyboardInterrupt:
     logger.info("Program interrupted by user")
-    poller.stop()
-    for tool in tools:
-        if tool.voltage_sensor is not None:
-            tool.voltage_sensor.stop()
-        if tool.gpio_pin is not None:
-            tool.cleanup()
-
+    
     # Cleanup dust collectors
     for collector in collectors:
-        collector.cleanup()
+        try:
+            logger.info(f"Cleaning up collector {collector.label}")
+            collector.cleanup()
+        except Exception as e:
+            logger.error(f"Error while cleaning up collector {collector.label}: {e}")
+    
+    for tool in tools:
+        if tool.voltage_sensor is not None:
+            try:
+                logger.info(f"Stopping voltage sensor for tool {tool.label}")
+                tool.voltage_sensor.stop()
+            except Exception as e:
+                logger.error(f"Error while stopping voltage sensor for tool {tool.label}: {e}")
+        if tool.gpio_pin is not None:
+            try:
+                logger.info(f"Cleaning up GPIO for tool {tool.label}")
+                tool.cleanup()
+            except Exception as e:
+                logger.error(f"Error while cleaning up GPIO for tool {tool.label}: {e}")
 
+    try:
+        logger.info("Stopping poller")
+        poller.stop()
+    except Exception as e:
+        logger.error(f"Error while stopping poller: {e}")
+        
     logger.info("All threads and resources cleaned up gracefully.")
