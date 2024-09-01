@@ -178,7 +178,7 @@ class Gate_Manager:
     def close_all_gates(self):
         '''Close all gates'''
         for gate in self.gates.values():
-            logger.debug(f'      🚥 ⛩️ Sending request to close {gate.name}')
+            #logger.debug(f'      🚥 ⛩️ Sending request to close {gate.name}')
             self.close_gate(gate.name)
 
     def open_gate(self, name):
@@ -191,7 +191,6 @@ class Gate_Manager:
     def close_gate(self, name):
         '''Close a single gate by name'''
         if name in self.gates:
-            logger.debug(f'      🚥 ⛩️  Gate manager send a request to gate {name} to close')
             self.gates[name].close()
         else:
             logger.debug(f"      🚥 ⛩️  Gate {name} not found.")

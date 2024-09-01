@@ -1,87 +1,55 @@
 import logging
-import RPi.GPIO as GPIO  # Import the RPi.GPIO module
+import RPi.GPIO as GPIO
 import threading
 import time
 
 logger = logging.getLogger(__name__)
 
-class Dust_Collector:
-    def __init__(self, collector_config, tools):
-        self.label = collector_config.get('label', 'unknown')
-        self.status = 'off'
-        self.gpio_pin = None
-        self.tools = tools  # List of tools to monitor
-        self.stop_event = threading.Event()  # Event to stop the thread
-        self.spin_down_time = collector_config.get('preferences', {}).get('spin_down_time', 30)  # Default to 30 seconds
+class DustCollector:
+    def __init__(self, config):
+        self.label = config.get('label', 'Unknown Collector')
+        self.board_id = config['connection']['board']
+        self.pin = config['connection']['pins'][0]
+        self.spin_up_delay = config['preferences'].get('spin_up_delay', 5)
+        self.minimum_up_time = config['preferences'].get('minimum_up_time', 10)
+        self.cool_down_time = config['preferences'].get('cool_down_time', 30)
+        self.relay_status = "off"
+        self._stop_thread = threading.Event()
 
-        try:
-            self.setup_relay(collector_config)
-        except KeyError as e:
-            logger.error(f"💢  💨 Error in Dust_Collector setup: Missing key {e}")
-            raise  # Re-raise the exception to be caught in main.py
+        # Setup GPIO for relay
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.LOW)
 
-        self.thread = threading.Thread(target=self.run, daemon=True)
+        logger.info(f"🌀 Dust Collector '{self.label}' initialized on board {self.board_id}, pin {self.pin}")
+
+        self.thread = threading.Thread(target=self._manage_collector)
         self.thread.start()
 
-    def setup_relay(self, collector_config):
-        relay_conn = collector_config.get('relay', {}).get('connection', {})
-        logger.debug(f"      🚥 💨 Setting up relay for {self.label} with config: {relay_conn}")
-        self.gpio_pin = relay_conn.get('pins', [40])[0]  # Assuming 'pins' is a list; take the first pin
-        if not self.gpio_pin:
-            raise KeyError("pin")
-
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.gpio_pin, GPIO.OUT, initial=GPIO.LOW)
-        logger.debug(f"      🚥 💨 GPIO pin {self.gpio_pin} set up for dust collector {self.label}")
+    def _manage_collector(self):
+        """Manage the dust collector relay based on the status."""
+        while not self._stop_thread.is_set():
+            if self.relay_status == "on":
+                time.sleep(self.minimum_up_time)
+                self.turn_off()
+            time.sleep(1)
 
     def turn_on(self):
-        if self.status != 'on':
-            self.status = 'on'
-            logger.info(f"     🔮 💨 Dust collector {self.label} turned on 💫")
-            if self.gpio_pin is not None:
-                GPIO.output(self.gpio_pin, GPIO.HIGH)
-                #logger.debug(f"      🚥 💨 GPIO pin {self.gpio_pin} activated for dust collector {self.label}")
+        if self.relay_status != "on":
+            self.relay_status = "on"
+            GPIO.output(self.pin, GPIO.HIGH)
+            logger.debug(f"🌀 Dust Collector '{self.label}' turned on")
 
     def turn_off(self):
-        if self.status != 'off':
-            self.status = 'off'
-            logger.info(f"     🔮 💨 Dust collector {self.label} turned off 💤")
-            if self.gpio_pin is not None:
-                GPIO.output(self.gpio_pin, GPIO.LOW)
-                #logger.debug(f"      🚥 💨 GPIO pin {self.gpio_pin} deactivated for dust collector {self.label}")
-
-    def run(self):
-        """Main loop to manage the dust collector based on tool statuses."""
-        while not self.stop_event.is_set():
-            self.manage_collector()
-            time.sleep(1)  # Adjust sleep time as needed
-
-    def manage_collector(self):
-        any_tool_on = False
-        max_spin_down_time = 0
-
-        for tool in self.tools:
-            if tool.status == 'on' and tool.preferences.get('use_collector', False):
-                any_tool_on = True
-                max_spin_down_time = max(max_spin_down_time, tool.preferences.get('spin_down_time', self.spin_down_time))
-
-        if any_tool_on:
-            self.turn_on()
-        elif self.status == 'on':
-            logger.info(f"     🔮 💨 Dust collector {self.label} will spin down in {max_spin_down_time} seconds.")
-            time.sleep(max_spin_down_time)
-            self.turn_off()
+        if self.relay_status != "off":
+            self.relay_status = "off"
+            GPIO.output(self.pin, GPIO.LOW)
+            logger.debug(f"🌀 Dust Collector '{self.label}' turned off")
 
     def cleanup(self):
-        logger.info(f"Stopping dust collector {self.label}")
-        self.stop_event.set()  # Signal the thread to stop
-        self.thread.join(timeout=5)  # Wait for the thread to finish with a timeout
-        logger.info(f"Dust collector {self.label} thread stopped")
-
-        if self.gpio_pin is not None:
-            GPIO.output(self.gpio_pin, GPIO.LOW)
-            GPIO.cleanup(self.gpio_pin)
-            logger.info(f"Cleaned up GPIO pin for dust collector {self.label}")
-
-
-
+        """Stop the thread and clean up GPIO resources."""
+        self._stop_thread.set()
+        self.thread.join(timeout=5)
+        if self.thread.is_alive():
+            logger.warning(f"Dust Collector '{self.label}' thread did not stop within the timeout period.")
+        GPIO.cleanup(self.pin)
+        logger.info(f"🧹 Cleaned up GPIO for Dust Collector '{self.label}'")

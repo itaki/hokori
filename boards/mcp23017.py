@@ -1,30 +1,31 @@
-from adafruit_mcp230xx.mcp23017 import MCP23017 as Adafruit_MCP23017
+import adafruit_mcp230xx.mcp23017 as MCP
+import board
+import busio
 from digitalio import Direction, Pull
-import logging
-
-logger = logging.getLogger(__name__)
 
 class MCP23017:
     def __init__(self, i2c, config):
-        self.i2c_address = int(config['i2c_address'], 16)
-        self.mcp = Adafruit_MCP23017(i2c, address=self.i2c_address)
-        self.pins = [self.mcp.get_pin(i) for i in range(16)]  # MCP23017 has 16 GPIO pins (0-15)
-        logger.info(f"     🔮 Initialized MCP23017 at address {hex(self.i2c_address)} as board ID {config['id']}")
+        self.mcp = MCP.MCP23017(i2c, address=int(config['i2c_address'], 16))
+        self.label = config.get('label', 'Unknown')
+        self.pins = {}
 
-    def get_pin(self, pin_number):
-        """Returns the pin object for the given pin number."""
-        return self.pins[pin_number]
+    def setup_input(self, pin):
+        """Set up a pin as an input."""
+        self.pins[pin] = self.mcp.get_pin(pin)
+        self.pins[pin].direction = Direction.INPUT
+        self.pins[pin].pull = Pull.UP  # Assuming you want to use a pull-up resistor
 
-    def setup_pin(self, pin, direction, pullup=False):
-        if direction == "input":
-            self.pins[pin].direction = Direction.INPUT
-            if pullup:
-                self.pins[pin].pull = Pull.UP
-        elif direction == "output":
-            self.pins[pin].direction = Direction.OUTPUT
+    def setup_output(self, pin):
+        """Set up a pin as an output."""
+        self.pins[pin] = self.mcp.get_pin(pin)
+        self.pins[pin].direction = Direction.OUTPUT
+        self.pins[pin].value = False  # Initialize the pin to LOW
 
-    def write_pin(self, pin, value):
+    def read_input(self, pin):
+        """Read the value from an input pin."""
+        return self.pins[pin].value
+
+    def write_output(self, pin, value):
+        """Write a value to an output pin."""
         self.pins[pin].value = value
 
-    def read_pin(self, pin):
-        return self.pins[pin].value
