@@ -3,12 +3,12 @@ import threading
 import time
 import RPi.GPIO as GPIO
 from .rgbled_button import RGBLED_Button
-from .voltage_sensor import Voltage_Sensor
+from .voltage_sensor_poller import VoltageSensorPoller  # Import the poller
 
 logger = logging.getLogger(__name__)
 
 class Tool:
-    def __init__(self, tool_config, mcp, pca, ads, gpio, styles, i2c, boards):
+    def __init__(self, tool_config, mcp, pca, ad_converter, gpio, styles, i2c, boards, poller):
         self.label = tool_config['label']
         self.id = tool_config['id']
         self.status = tool_config.get('status', 'off')
@@ -23,13 +23,11 @@ class Tool:
         self.button_status = 'off'
         try:
             if mcp and 'button' in tool_config:
-                #logger.debug(f"🌑 Initializing button for tool {self.label} with config: {tool_config['button']}")
                 button_pins = tool_config['button']['connection']['pins']
                 led_pins = tool_config['button']['led']['connection']['pins'] if 'led' in tool_config['button'] else []
                 self.button = RGBLED_Button(tool_config['button'], mcp, pca, styles['RGBLED_button_styles'], self.update_status_from_button)
             else:
                 self.button = None
-                #logger.warning(f"🌟 No button configuration found for tool {self.label}")
         except Exception as e:
             logger.error(f"💢 Error initializing button for tool {self.label}: {e}")
             raise
@@ -37,24 +35,25 @@ class Tool:
         # Initialize voltage sensor if available
         self.voltage_status = 'off'
         try:
-            if ads and 'volt' in tool_config:
-                #logger.debug(f"🌑 Initializing voltage sensor for tool {self.label} with config: {tool_config['volt']}")
-                self.voltage_sensor = Voltage_Sensor(tool_config['volt'], ads, self.update_status_from_voltage)
+            if ad_converter and 'volt' in tool_config:
+                # Use the provided poller
+                if poller:
+                    poller.register_tool(tool_config['volt'], self.update_status_from_voltage)
+                else:
+                    logger.error(f"💢 No VoltageSensorPoller available for tool {self.label}")
             else:
-                self.voltage_sensor = None
-                #logger.warning(f"🌟 No voltage sensor configuration found for tool {self.label}")
+                self.voltage_sensor_poller = None
         except Exception as e:
             logger.error(f"💢 Error initializing voltage sensor for tool {self.label}: {e}")
             raise
 
         # Initialize relay (dust collector)
         self.relay_status = 'off'
-        self.gpio_pin = None  # Initialize gpio_pin attribute
+        self.gpio_pin = None
         try:
             if gpio and 'relay' in tool_config:
-                #logger.debug(f"🌑 Initializing relay for tool {self.label} with config: {tool_config['relay']}")
                 relay_pins = tool_config['relay']['connection']['pins']
-                self.gpio_pin = relay_pins[0]  # Assume single pin for relay control
+                self.gpio_pin = relay_pins[0]
                 GPIO.setmode(GPIO.BCM)
                 GPIO.setup(self.gpio_pin, GPIO.OUT, initial=GPIO.LOW)
                 self.thread = threading.Thread(target=self.run_relay, daemon=True)
@@ -62,12 +61,9 @@ class Tool:
                 logger.info(f"     🔮 Initialized Tool {self.label} successfully.")
             else:
                 self.gpio_pin = None
-                #logger.warning(f"🌟 No relay configuration found for tool {self.label}")
         except Exception as e:
             logger.error(f"💢 Error initializing relay for tool {self.label}: {e}")
             raise
-
-        
 
     def run_relay(self):
         """Threaded function to manage the dust collector based on tool status."""
@@ -85,14 +81,12 @@ class Tool:
     def turn_on(self):
         if self.relay_status != 'on':
             self.relay_status = 'on'
-            #logger.info(f"🔵 Tool {self.label} turned on.")
             if self.gpio_pin is not None:
                 GPIO.output(self.gpio_pin, GPIO.HIGH)
 
     def turn_off(self):
         if self.relay_status != 'off':
             self.relay_status = 'off'
-            #logger.info(f"🔵 Tool {self.label} turned off.")
             if self.gpio_pin is not None:
                 GPIO.output(self.gpio_pin, GPIO.LOW)
 
@@ -104,7 +98,6 @@ class Tool:
     def update_status_from_button(self, new_status):
         self.button_status = new_status
         self.update_status()
-        
 
     def update_status_from_voltage(self, new_status):
         self.voltage_status = new_status
@@ -116,14 +109,10 @@ class Tool:
         if new_status != self.status:
             self.status = new_status
             self.status_changed = True
-            if self.status == 'on':
-                icon = "💫"
-            else:
-                icon = "💤"        
+            icon = "💫" if self.status == 'on' else "💤"
             logger.info(f"🔵 {icon} Tool {self.label} status changed to {self.status} {icon}")
         else:
             self.status_changed = False
-
 
     def reset_status_changed(self):
         self.status_changed = False
